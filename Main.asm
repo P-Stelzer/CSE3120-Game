@@ -16,8 +16,10 @@ cursorY BYTE 0
 GRID_ROWS EQU 3
 GRID_COLS EQU 4
 GRID_ELEM_SIZE EQU TYPE Card
-grid DW GRID_ROWS * GRID_COLS DUP(?)
+grid Card GRID_ROWS * GRID_COLS DUP(<,>)
 
+NUM_SYMBOLS EQU (GRID_ROWS * GRID_COLS) / 2
+randSymbols BYTE NUM_SYMBOLS*2 DUP(?)
 
 
 
@@ -126,8 +128,38 @@ MoveDown ENDP
 
 main PROC
 
+   mov ecx, NUM_SYMBOLS
+   mov ebx, 0
+   mov al, 97
+
+ char_init_loop:
+   mov randSymbols[ebx], al
+   inc ebx
+   mov randSymbols[ebx], al
+   inc al
+   inc ebx
+   loop char_init_loop
+
+   mov ecx, NUM_SYMBOLS*2
+   mov ebx, 0
+ char_rand_loop:
+   mov eax, NUM_SYMBOLS*2
+   call RandomRange
+   mov dl, randSymbols[ebx]
+   push edx
+   mov dl, randSymbols[eax]
+   mov randSymbols[ebx], dl
+   pop edx
+   mov randSymbols[eax], dl
+   inc ebx
+   loop char_rand_loop
+
+
+
+
    mov ecx, GRID_ROWS
    mov ebx, 0 ; y
+   mov ebp, 0
 
  row_loop:
    push ecx
@@ -135,9 +167,8 @@ main PROC
    mov esi, 0 ; x
 
  col_loop:
-   mov eax, 26
-   call RandomRange
-   add al, 97
+   mov al, randSymbols[ebp]
+   inc ebp
    mov (Card PTR grid[ebx + esi * TYPE grid]).symbol, al
 
 

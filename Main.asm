@@ -5,7 +5,7 @@ INCLUDE Irvine32.inc
 .data
 Card STRUCT
    symbol BYTE ?
-   state BYTE ? ; 0=hidden, 1=peek, 2=found
+   state BYTE 0 ; 0=hidden, 1=peek, 2=found
 Card ENDS
 
 DOT_CHAR EQU 249
@@ -128,6 +128,8 @@ MoveDown ENDP
 
 main PROC
 
+; GENERATE RANDOM SYMBOLS IN PAIRS
+   ; FILL ARRAY
    mov ecx, NUM_SYMBOLS
    mov ebx, 0
    mov al, 97
@@ -140,6 +142,7 @@ main PROC
    inc ebx
    loop char_init_loop
 
+   ; SHUFFLE ARRAY
    mov ecx, NUM_SYMBOLS*2
    mov ebx, 0
  char_rand_loop:
@@ -156,7 +159,7 @@ main PROC
 
 
 
-
+;POPULATE GRID WITH RANDOM SYMBOLS
    mov ecx, GRID_ROWS
    mov ebx, 0 ; y
    mov ebp, 0

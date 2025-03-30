@@ -25,6 +25,7 @@ randSymbols BYTE NUM_SYMBOLS*2 DUP(?)
 
 .code
 
+; === MoveRight =================
 MoveRight PROC
 
  mov dl, cursorX
@@ -49,7 +50,7 @@ MoveRight PROC
 
 MoveRight ENDP
 
-
+; === MoveLeft =================
 MoveLeft PROC
 
  mov dl, cursorX
@@ -75,7 +76,7 @@ MoveLeft PROC
 MoveLeft ENDP
 
 
-
+; === MoveUp =================
 MoveUp PROC
 
  mov dh, cursorY
@@ -101,6 +102,7 @@ MoveUp PROC
 MoveUp ENDP
 
 
+; === MoveDown =================
 MoveDown PROC
 
  mov dh, cursorY
@@ -126,6 +128,40 @@ MoveDown PROC
 MoveDown ENDP
 
 
+; === DrawBoard ===============================
+DrawBoard PROC USES ecx ebx ebp eax esi
+   mov ecx, GRID_ROWS
+   mov ebx, 0 ; y
+   mov ebp, 0
+
+ draw_row:
+   push ecx
+   mov ecx, GRID_COLS
+   mov esi, 0 ; x
+
+ draw_col:
+   mov al, randSymbols[ebp]
+   mov (Card PTR grid[ebx + esi * TYPE grid]).symbol, al
+
+
+   mov edx, esi
+   mov dh, bl
+   call Gotoxy
+   call WriteChar
+
+   inc esi
+   inc ebp
+   loop draw_col
+
+   inc ebx
+   pop ecx
+   loop draw_row
+
+   ret
+DrawBoard ENDP
+
+
+; === MAIN ==========================================================
 main PROC
 
 ; GENERATE RANDOM SYMBOLS IN PAIRS
@@ -159,34 +195,7 @@ main PROC
 
 
 
-;POPULATE GRID WITH RANDOM SYMBOLS
-   mov ecx, GRID_ROWS
-   mov ebx, 0 ; y
-   mov ebp, 0
-
- row_loop:
-   push ecx
-   mov ecx, GRID_COLS
-   mov esi, 0 ; x
-
- col_loop:
-   mov al, randSymbols[ebp]
-   inc ebp
-   mov (Card PTR grid[ebx + esi * TYPE grid]).symbol, al
-
-
-   mov edx, esi
-   mov dh, bl
-   call Gotoxy
-   call WriteChar
-
-   inc esi
-   loop col_loop
-
-   inc ebx
-   pop ecx
-   loop row_loop
-
+call DrawBoard
 
 
 mov al, DOT_CHAR

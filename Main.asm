@@ -8,17 +8,20 @@ Card STRUCT
    state BYTE 0 ; 0=hidden, 1=peek, 2=found, 3=wrong
 Card ENDS
 
-DOT_CHAR EQU 249
 CARD_BACK_CHAR EQU 35
+cardRowPadding BYTE 2
+cardColPadding BYTE 4
 
 cursorX BYTE 0
 cursorY BYTE 0
 
 ; GRID_ROWS * GRID_COLS MUST BE EVEN
-GRID_ROWS EQU 6
-GRID_COLS EQU 8
+GRID_ROWS EQU 3
+GRID_COLS EQU 6
 GRID_ELEM_SIZE EQU TYPE Card
 grid Card GRID_ROWS * GRID_COLS DUP(<33,0>)
+gridOriginX BYTE 3
+gridOriginY BYTE 1
 
 NUM_SYMBOLS EQU (GRID_ROWS * GRID_COLS) / 2
 randSymbols BYTE NUM_SYMBOLS*2 DUP(?)
@@ -130,14 +133,29 @@ DrawBoard PROC USES ecx ebx edi eax esi
       mov al, (Card PTR grid[0 + edi * TYPE grid]).symbol
    .ENDIF
 
+   push eax
+
+
    mov edx, esi ; set dl == x
+   mov al, dl
+   mul cardColPadding
+   add al, gridOriginX
+   mov dl, al
+
    mov dh, bl   ; set dh == y
+   mov al, dh
+   mul cardRowPadding
+   add al, gridOriginY
+   mov dh, al
+
+   pop eax
    call Gotoxy
    call WriteChar
 
    inc esi
    inc edi
-   loop draw_col
+   dec ecx
+   jnz draw_col
 
    inc ebx
    pop ecx

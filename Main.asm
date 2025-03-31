@@ -110,12 +110,18 @@ DrawBoard PROC USES ecx ebx edi eax esi
  draw_col:
    mov eax, esi
    mov ah, (Card PTR grid[0 + edi * TYPE grid]).state
-   .IF al == cursorX && bl == cursorY
-      mov eax, lightGreen
+   .IF ah == 3 
+      mov eax, red
    .ELSEIF ah == 1
       mov eax, cyan
-   .ELSEIF ah == 3
-      mov eax, red
+   .ELSEIF al == cursorX && bl == cursorY
+      .IF ah == 2
+         mov eax, lightGray
+      .ELSE
+         mov eax, lightGreen
+      .ENDIF
+   .ELSEIF ah == 2
+      mov eax, gray
    .ELSE
       mov eax, white
    .ENDIF
@@ -225,7 +231,7 @@ main PROC
 
 ; GAME LOOP
    mov ebx, TYPE WORD
-   .WHILE 1
+   .WHILE numFound < NUM_SYMBOLS
       call DrawBoard
       call ReadChar
       .IF AX == 4D00h ; right
@@ -261,9 +267,6 @@ main PROC
                   mov (Card PTR [ebx]).state, 2
                   mov (Card PTR [eax]).state, 2
                   inc numFound
-                  .IF numFound == NUM_SYMBOLS
-                     ; GAME WON
-                  .ENDIF
                .ELSE
                   mov (Card PTR [ebx]).state, 3
                   mov (Card PTR [eax]).state, 3
@@ -301,6 +304,8 @@ main PROC
          mov AX, 0
       .ENDIF
    .ENDW
+
+   call DrawBoard
    
    exit
 main ENDP

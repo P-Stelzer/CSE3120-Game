@@ -129,10 +129,10 @@ MoveDown ENDP
 
 
 ; === DrawBoard ===============================
-DrawBoard PROC USES ecx ebx ebp eax esi
+DrawBoard PROC USES ecx ebx edi eax esi
    mov ecx, GRID_ROWS
    mov ebx, 0 ; y
-   mov ebp, 0
+   mov edi, 0
 
  draw_row:
    push ecx
@@ -140,9 +140,7 @@ DrawBoard PROC USES ecx ebx ebp eax esi
    mov esi, 0 ; x
 
  draw_col:
-   mov al, randSymbols[ebp]
-   mov (Card PTR grid[ebx + esi * TYPE grid]).symbol, al
-
+   mov al, (Card PTR grid[ebx + esi * TYPE grid]).symbol
 
    mov edx, esi
    mov dh, bl
@@ -150,7 +148,7 @@ DrawBoard PROC USES ecx ebx ebp eax esi
    call WriteChar
 
    inc esi
-   inc ebp
+   inc edi
    loop draw_col
 
    inc ebx
@@ -193,6 +191,27 @@ main PROC
    inc ebx
    loop char_rand_loop
 
+   ; LOAD ARRAY INTO CARDS
+   mov ecx, GRID_ROWS
+   mov ebx, 0 ; y
+   mov edi, 0
+
+ loop_row:
+   push ecx
+   mov ecx, GRID_COLS
+   mov esi, 0 ; x
+
+ loop_col:
+   mov al, randSymbols[edi]
+   mov (Card PTR grid[ebx + esi * TYPE grid]).symbol, al
+
+   inc esi
+   inc edi
+   loop loop_col
+
+   inc ebx
+   pop ecx
+   loop loop_row
 
 
 call DrawBoard

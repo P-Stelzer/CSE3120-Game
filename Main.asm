@@ -31,6 +31,9 @@ gridOriginY BYTE 1
 NUM_SYMBOLS EQU (GRID_ROWS * GRID_COLS) / 2
 randSymbols BYTE NUM_SYMBOLS*2 DUP(?)
 
+POOL_SHUFFLES EQU 3
+BOARD_SHUFFLES EQU 3
+
 
 peek1 DWORD 0
 
@@ -360,9 +363,13 @@ call Randomize
 
 ; GENERATE RANDOM SYMBOLS IN PAIRS
    ; SHUFFLE Pool
+   mov ecx, POOL_SHUFFLES
+ pool_shuffle_loop:
+   push ecx
+
    mov ecx, POOL_SIZE
    mov ebx, 0
- pool_rand_loop:
+ pool_shuffle_once:
    mov eax, POOL_SIZE
    call RandomRange
    mov dl, symbolPool[ebx]
@@ -372,26 +379,33 @@ call Randomize
    pop edx
    mov symbolPool[eax], dl
    inc ebx
-   loop pool_rand_loop
+   loop pool_shuffle_once
+
+   pop ecx
+   loop pool_shuffle_loop
 
    ; FILL ARRAY
    mov ecx, NUM_SYMBOLS
    mov ebx, 0
    mov esi, 0
 
- char_init_loop:
+ board_init_loop:
    mov al, symbolPool[esi]
    mov randSymbols[ebx], al
    inc ebx
    mov randSymbols[ebx], al
    inc esi
    inc ebx
-   loop char_init_loop
+   loop board_init_loop
 
    ; SHUFFLE ARRAY
+   mov ecx, BOARD_SHUFFLES
+ board_shuffle_loop:
+   push ecx
+
    mov ecx, NUM_SYMBOLS*2
    mov ebx, 0
- char_rand_loop:
+ board_shuffle_once:
    mov eax, NUM_SYMBOLS*2
    call RandomRange
    mov dl, randSymbols[ebx]
@@ -401,9 +415,12 @@ call Randomize
    pop edx
    mov randSymbols[eax], dl
    inc ebx
-   loop char_rand_loop
+   loop board_shuffle_once
 
-   ; LOAD ARRAY INTO CARDS
+   pop ecx
+   loop board_shuffle_loop
+
+   ; LOAD SYMBOLS INTO CARDS
    mov ecx, GRID_ROWS
    mov ebx, 0 ; y
    mov edi, 0

@@ -23,7 +23,7 @@ cursorY BYTE 0
 ; GRID_ROWS * GRID_COLS MUST BE EVEN AND NOT GREATER THAN 2*POOL_SIZE
 GRID_ROWS EQU 5 ; suggested max 9
 GRID_COLS EQU 8 ; suggested max 16
-GRID_ELEM_SIZE EQU TYPE Card
+
 grid Card GRID_ROWS * GRID_COLS DUP(<33,0>)
 gridOriginX BYTE 3
 gridOriginY BYTE 1
@@ -58,10 +58,9 @@ POOL_SIZE EQU 73
 symbolPool BYTE "ABCDEFGHIJKLM"
            BYTE "NOPQRSTUVWXYZ"
            BYTE "abcdefghijklm"
-           BYTE "nopqrstuvwxyz~"
-           BYTE "!$%&+"
+           BYTE "nopqrstuvwxyz"
            BYTE "0123456789"
-           BYTE "<=>?@"
+           BYTE "~!$%&+<=>?@"
 
 
 .code
@@ -151,7 +150,7 @@ DrawBoard PROC USES ecx ebx edi eax esi
    call SetTextColor
 
 
-   ; Select Card State
+   ; Select Glyph
    mov al, (Card PTR grid[0 + edi * TYPE grid]).state
    .IF al == 0
       mov al, CARD_BACK_CHAR

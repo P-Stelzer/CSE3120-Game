@@ -1,4 +1,4 @@
-Microsoft (R) Macro Assembler Version 14.43.34809.0	    03/31/25 14:03:06
+Microsoft (R) Macro Assembler Version 14.43.34809.0	    03/31/25 14:08:25
 Main.asm						     Page 1 - 1
 
 
@@ -44,7 +44,7 @@ Main.asm						     Page 1 - 1
 				; GRID_ROWS * GRID_COLS MUST BE EVEN AND NOT GREATER THAN 2*POOL_SIZE
  = 00000005			GRID_ROWS EQU 5 ; suggested max 9
  = 00000008			GRID_COLS EQU 8 ; suggested max 16
- = 00000002			GRID_ELEM_SIZE EQU TYPE Card
+
  00000004  00000028 [		grid Card GRID_ROWS * GRID_COLS DUP(<33,0>)
 	    21 00
 	   ]
@@ -143,13 +143,14 @@ Main.asm						     Page 1 - 1
  000001CA  61 62 63 64 65	           BYTE "abcdefghijklm"
 	   66 67 68 69 6A
 	   6B 6C 6D
- 000001D7  6E 6F 70 71 72	           BYTE "nopqrstuvwxyz~"
+ 000001D7  6E 6F 70 71 72	           BYTE "nopqrstuvwxyz"
 	   73 74 75 76 77
-	   78 79 7A 7E
- 000001E5  21 24 25 26 2B	           BYTE "!$%&+"
- 000001EA  30 31 32 33 34	           BYTE "0123456789"
+	   78 79 7A
+ 000001E4  30 31 32 33 34	           BYTE "0123456789"
 	   35 36 37 38 39
- 000001F4  3C 3D 3E 3F 40	           BYTE "<=>?@"
+ 000001EE  7E 21 24 25 26	           BYTE "~!$%&+<=>?@"
+	   2B 3C 3D 3E 3F
+	   40
 
 
  00000000			.code
@@ -902,7 +903,7 @@ Main.asm						     Page 1 - 1
  00000563			main ENDP
 
 				END main
-Microsoft (R) Macro Assembler Version 14.43.34809.0	    03/31/25 14:03:06
+Microsoft (R) Macro Assembler Version 14.43.34809.0	    03/31/25 14:08:25
 Main.asm						     Symbols 2 - 1
 
 
@@ -1205,7 +1206,6 @@ GENERIC_EXECUTE  . . . . . . . .	Number	 20000000h
 GENERIC_READ . . . . . . . . . .	Number	 -80000000h   
 GENERIC_WRITE  . . . . . . . . .	Number	 40000000h   
 GRID_COLS  . . . . . . . . . . .	Number	 00000008h   
-GRID_ELEM_SIZE . . . . . . . . .	Number	 00000002h   
 GRID_ROWS  . . . . . . . . . . .	Number	 00000005h   
 GetCommandLine . . . . . . . . .	Text   	 GetCommandLineA
 HANDLE . . . . . . . . . . . . .	Text   	 DWORD

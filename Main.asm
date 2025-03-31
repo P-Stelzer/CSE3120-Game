@@ -26,6 +26,8 @@ randSymbols BYTE NUM_SYMBOLS*2 DUP(?)
 
 peakOne DWORD 0
 
+numFound BYTE 0
+
 
 
 .code
@@ -191,11 +193,8 @@ main PROC
    mov esi, 0 ; x
 
  loop_col:
-   ; mov al, (Card PTR grid).state
-   ; lea eax, (Card PTR grid).state
    mov al, randSymbols[edi]
    mov (Card PTR grid[0 + edi * TYPE grid]).symbol, al
-   ; mov al, (Card PTR grid[ebx + esi * TYPE grid]).symbol
 
    inc esi
    inc edi
@@ -243,6 +242,10 @@ main PROC
                .IF dh == dl
                   mov (Card PTR [ebx]).state, 2
                   mov (Card PTR [eax]).state, 2
+                  inc numFound
+                  .IF numFound == NUM_SYMBOLS
+                     ; GAME WON
+                  .ENDIF
                .ELSE
                   mov (Card PTR [ebx]).state, 3
                   mov (Card PTR [eax]).state, 3
@@ -252,6 +255,29 @@ main PROC
 
 
          .ENDIF
+      .ELSEIF AX == 2960h ; ~
+         mov ecx, GRID_ROWS
+         mov ebx, 0 ; y
+         mov edi, 0
+      
+       loop_row_1:
+         push ecx
+         mov ecx, GRID_COLS
+         mov esi, 0 ; x
+      
+       loop_col_1:
+         mov al, (Card PTR grid[0 + edi * TYPE grid]).state
+         .IF al != 2
+            mov (Card PTR grid[0 + edi * TYPE grid]).state, 3
+         .ENDIF
+      
+         inc esi
+         inc edi
+         loop loop_col_1
+      
+         inc ebx
+         pop ecx
+         loop loop_row_1
 
       .ELSE
          mov AX, 0

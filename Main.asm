@@ -231,8 +231,19 @@ DrawInfo PROC USES eax edx
       mov EDX, OFFSET winMessage
       call WriteString
    .ELSE
+      push edx
       mov EDX, OFFSET infoStr2
       call WriteString
+
+      ; Clear decimal field so that digits are not left behind
+      mov al, " "
+      call WriteChar
+      call WriteChar
+
+      pop edx
+      add dl, LENGTHOF infoStr2
+      dec dl
+      call Gotoxy
 
       mov eax, NUM_SYMBOLS
       sub al, numFound

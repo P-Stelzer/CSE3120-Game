@@ -261,12 +261,13 @@ mShowWelc MACRO message
    push edx
    mov edx, OFFSET message
    call WriteString
+   pop edx
+   mHideCursor
    call ReadChar
    call Clrscr
    .IF AX == 2960h
       jmp game_loop
    .ENDIF
-   pop edx
 ENDM
 
 
@@ -335,6 +336,20 @@ mRevealBoard MACRO
    pop ecx
    loop loop_row_1
 
+ENDM
+
+
+; === mHideCursor ===================================================================
+mHideCursor MACRO
+   push edx
+   push eax
+   call GetMaxXY
+   mov dh, al
+   dec dh
+   dec dl
+   call GotoXY
+   pop eax
+   pop edx
 ENDM
 
 
@@ -430,6 +445,7 @@ call Randomize
    .WHILE numFound < NUM_SYMBOLS
       call DrawBoard
       call DrawInfo
+      mHideCursor
       call ReadChar
       .IF AX == 4D00h ; right
          MoveRight

@@ -9,6 +9,7 @@ Card STRUCT
 Card ENDS
 
 DOT_CHAR EQU 249
+CARD_BACK_CHAR EQU 35
 
 cursorX BYTE 0
 cursorY BYTE 0
@@ -31,19 +32,8 @@ MoveRight PROC
  mov dl, cursorX
  inc dl
 
-.IF dl >= 0 && dl <= GRID_COLS
-  mov al, " "
-  call WriteChar
-
-  mov dh, cursorY
-  call Gotoxy
-
-  mov al, DOT_CHAR
-  call WriteChar
-  call Gotoxy
-
-
-  mov cursorX, dl
+ .IF dl >= 0 && dl < GRID_COLS
+    mov cursorX, dl
  .ENDIF
 
  ret
@@ -56,19 +46,8 @@ MoveLeft PROC
  mov dl, cursorX
  dec dl
 
-.IF dl >= 0 && dl <= GRID_COLS
-  mov al, " "
-  call WriteChar
-
-  mov dh, cursorY
-  call Gotoxy
-
-  mov al, DOT_CHAR
-  call WriteChar
-  call Gotoxy
-
-
-  mov cursorX, dl
+ .IF dl >= 0 && dl < GRID_COLS
+    mov cursorX, dl
  .ENDIF
 
  ret
@@ -82,19 +61,8 @@ MoveUp PROC
  mov dh, cursorY
  dec dh
 
-.IF dh >= 0 && dh <= GRID_ROWS
-  mov al, " "
-  call WriteChar
-
-  mov dl, cursorX
-  call Gotoxy
-
-  mov al, DOT_CHAR
-  call WriteChar
-  call Gotoxy
-
-
-  mov cursorY, dh
+ .IF dh >= 0 && dh < GRID_ROWS
+    mov cursorY, dh
  .ENDIF
 
  ret
@@ -108,19 +76,8 @@ MoveDown PROC
  mov dh, cursorY
  inc dh
 
-.IF dh >= 0 && dh <= GRID_ROWS
-  mov al, " "
-  call WriteChar
-
-  mov dl, cursorX
-  call Gotoxy
-
-  mov al, DOT_CHAR
-  call WriteChar
-  call Gotoxy
-
-
-  mov cursorY, dh
+ .IF dh >= 0 && dh < GRID_ROWS
+    mov cursorY, dh
  .ENDIF
 
  ret
@@ -130,6 +87,8 @@ MoveDown ENDP
 
 ; === DrawBoard ===============================
 DrawBoard PROC USES ecx ebx edi eax esi
+   call Clrscr
+
    mov ecx, GRID_ROWS
    mov ebx, 0 ; y
    mov edi, 0
@@ -140,7 +99,22 @@ DrawBoard PROC USES ecx ebx edi eax esi
    mov esi, 0 ; x
 
  draw_col:
-   mov al, (Card PTR grid[ebx + esi * TYPE grid]).symbol
+   mov eax, esi
+   .IF al == cursorX && bl == cursorY
+      mov eax, green
+   .ELSE
+      mov eax, white
+   .ENDIF
+   call SetTextColor
+
+
+
+   mov al, (Card PTR grid[ebx + esi * TYPE grid]).state
+   .IF al == 0
+      mov al, CARD_BACK_CHAR
+   .ELSE
+      mov al, (Card PTR grid[ebx + esi * TYPE grid]).symbol
+   .ENDIF
 
    mov edx, esi
    mov dh, bl
@@ -237,6 +211,7 @@ mov ebx, TYPE WORD
   .ELSEIF AX == 4B00h ; left
    INVOKE MoveLeft
   .ENDIF
+  call DrawBoard
  .ENDW
 
  exit

@@ -267,7 +267,7 @@ main PROC
       
        loop_col_1:
          mov al, (Card PTR grid[0 + edi * TYPE grid]).state
-         .IF al != 2
+         .IF al == 0
             mov (Card PTR grid[0 + edi * TYPE grid]).state, 3
          .ENDIF
       

@@ -32,6 +32,13 @@ peakOne DWORD 0
 numFound BYTE 0
 
 
+welcomeMessage1 BYTE "Welcome to Memory Matching!...",0
+welcomeMessage2 BYTE "Select cards with the arrow keys...",0
+welcomeMessage3 BYTE "Reveal the selected card with space...",0
+welcomeMessage4 BYTE "Each card has exactly one match...",0
+welcomeMessage5 BYTE "If the last two revealed cards match, they remain visible...",0
+welcomeMessage6 BYTE "Find all matches to win!...",0
+
 
 .code
 
@@ -172,6 +179,17 @@ DrawBoard PROC USES ecx ebx edi eax esi
 DrawBoard ENDP
 
 
+mShowWelc MACRO message
+   mov edx, OFFSET message
+   call WriteString
+   call ReadChar
+   call Clrscr
+   .IF AX == 2960h
+      jmp game_loop
+   .ENDIF
+ENDM
+
+
 ; === MAIN ==========================================================
 main PROC
 
@@ -228,7 +246,21 @@ main PROC
    pop ecx
    loop loop_row
 
+; GAME START
 
+   mov dl, gridOriginX
+   mov dh, gridOriginY
+
+   mShowWelc welcomeMessage1
+   mShowWelc welcomeMessage2
+   mShowWelc welcomeMessage3
+   mShowWelc welcomeMessage4
+   mShowWelc welcomeMessage5
+   mShowWelc welcomeMessage6
+
+
+
+ game_loop:
 ; GAME LOOP
    mov ebx, TYPE WORD
    .WHILE numFound < NUM_SYMBOLS

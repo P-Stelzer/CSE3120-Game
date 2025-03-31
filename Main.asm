@@ -63,8 +63,8 @@ symbolPool BYTE "ABCDEFGHIJKLM"
 
 .code
 
-; === MoveRight =================
-MoveRight PROC
+; === MoveRight =====================================================================
+MoveRight MACRO
 
  mov dl, cursorX
  inc dl
@@ -73,12 +73,10 @@ MoveRight PROC
     mov cursorX, dl
  .ENDIF
 
- ret
+ENDM
 
-MoveRight ENDP
-
-; === MoveLeft =================
-MoveLeft PROC
+; === MoveLeft ======================================================================
+MoveLeft MACRO
 
  mov dl, cursorX
  dec dl
@@ -87,13 +85,11 @@ MoveLeft PROC
     mov cursorX, dl
  .ENDIF
 
- ret
-
-MoveLeft ENDP
+ENDM
 
 
-; === MoveUp =================
-MoveUp PROC
+; === MoveUp ========================================================================
+MoveUp MACRO
 
  mov dh, cursorY
  dec dh
@@ -102,13 +98,11 @@ MoveUp PROC
     mov cursorY, dh
  .ENDIF
 
- ret
-
-MoveUp ENDP
+ENDM
 
 
-; === MoveDown =================
-MoveDown PROC
+; === MoveDown ======================================================================
+MoveDown MACRO
 
  mov dh, cursorY
  inc dh
@@ -117,14 +111,11 @@ MoveDown PROC
     mov cursorY, dh
  .ENDIF
 
- ret
-
-MoveDown ENDP
+ENDM
 
 
-; === DrawBoard ===============================
+; === DrawBoard =====================================================================
 DrawBoard PROC USES ecx ebx edi eax esi
-   ; call Clrscr
 
    mov ecx, GRID_ROWS
    mov ebx, 0 ; y
@@ -136,6 +127,7 @@ DrawBoard PROC USES ecx ebx edi eax esi
    mov esi, 0 ; x
 
  draw_col:
+   ; Select Color
    mov eax, esi
    mov ah, (Card PTR grid[0 + edi * TYPE grid]).state
    .IF ah == 3 
@@ -156,7 +148,7 @@ DrawBoard PROC USES ecx ebx edi eax esi
    call SetTextColor
 
 
-
+   ; Select Card State
    mov al, (Card PTR grid[0 + edi * TYPE grid]).state
    .IF al == 0
       mov al, CARD_BACK_CHAR
@@ -170,6 +162,7 @@ DrawBoard PROC USES ecx ebx edi eax esi
    push eax
 
 
+   ; Calculate Location
    mov edx, esi ; set dl == x
    mov al, dl
    mul cardColPadding
@@ -186,6 +179,7 @@ DrawBoard PROC USES ecx ebx edi eax esi
    call Gotoxy
    call WriteChar
 
+   ; Loop Stuff
    inc esi
    inc edi
    dec ecx
@@ -199,11 +193,14 @@ DrawBoard PROC USES ecx ebx edi eax esi
    ret
 DrawBoard ENDP
 
+
+; === DrawInfo ======================================================================
 DrawInfo PROC USES eax edx
 
    mov eax, white
    call SetTextColor
 
+   ; Number Attempts
    mov dl, gridOriginX
    mov dh, gridOriginY
    mov al, GRID_ROWS
@@ -223,6 +220,8 @@ DrawInfo PROC USES eax edx
 
    call WriteDec
 
+
+   ; Pairs Remaining
    pop edx
    inc dh
 
@@ -240,13 +239,12 @@ DrawInfo PROC USES eax edx
       call WriteDec
    .ENDIF
 
-   
-
    ret
 
 DrawInfo ENDP
 
 
+; === mShowWelc =====================================================================
 mShowWelc MACRO message
    call Gotoxy
    push edx
@@ -261,7 +259,75 @@ mShowWelc MACRO message
 ENDM
 
 
-; === MAIN ==========================================================
+; === mPeekCard =====================================================================
+mPeekCard MACRO
+   ; GET CARD INDEX UNDER CURSOR
+   mov eax, 0
+   mov al, cursorY
+   mov bl, GRID_COLS
+   mul bl
+   add al, cursorX
+   
+   ; LOAD CARD AND CHECK STATE
+   lea ebx, grid[0 + eax * TYPE grid]
+   mov dl, (Card PTR [ebx]).state
+   .IF dl == 0
+      mov (Card PTR [ebx]).state, 1
+   
+      .IF peek1 == 0
+         mov peek1, ebx
+      .ELSE
+         inc numAttempts
+         mov eax, peek1
+         mov dh, (Card PTR [ebx]).symbol
+         mov dl, (Card PTR [eax]).symbol
+   
+         .IF dh == dl
+            mov (Card PTR [ebx]).state, 2
+            mov (Card PTR [eax]).state, 2
+            inc numFound
+         .ELSE
+            mov (Card PTR [ebx]).state, 3
+            mov (Card PTR [eax]).state, 3
+         .ENDIF
+         mov peek1, 0
+      .ENDIF
+   
+   
+   .ENDIF
+   
+ENDM
+
+
+; === mRevealBoard ==================================================================
+mRevealBoard MACRO
+   mov ecx, GRID_ROWS
+   mov ebx, 0 ; y
+   mov edi, 0
+ 
+ loop_row_1:
+   push ecx
+   mov ecx, GRID_COLS
+   mov esi, 0 ; x
+ 
+ loop_col_1:
+   mov al, (Card PTR grid[0 + edi * TYPE grid]).state
+   .IF al == 0
+      mov (Card PTR grid[0 + edi * TYPE grid]).state, 3
+   .ENDIF
+ 
+   inc esi
+   inc edi
+   loop loop_col_1
+ 
+   inc ebx
+   pop ecx
+   loop loop_row_1
+
+ENDM
+
+
+; === MAIN ==========================================================================
 main PROC
 
 call Randomize
@@ -355,72 +421,17 @@ call Randomize
       call DrawInfo
       call ReadChar
       .IF AX == 4D00h ; right
-         INVOKE MoveRight
+         MoveRight
       .ELSEIF AX == 4800h ; up
-         INVOKE MoveUp
+         MoveUp
       .ELSEIF AX == 5000h ; down
-         INVOKE MoveDown
+         MoveDown
       .ELSEIF AX == 4B00h ; left
-         INVOKE MoveLeft
+         MoveLeft
       .ELSEIF AX == 3920h ; space
-         ; GET CARD INDEX UNDER CURSOR
-         mov eax, 0
-         mov al, cursorY
-         mov bl, GRID_COLS
-         mul bl
-         add al, cursorX
-
-         ; LOAD CARD AND CHECK STATE
-         lea ebx, grid[0 + eax * TYPE grid]
-         mov dl, (Card PTR [ebx]).state
-         .IF dl == 0
-            mov (Card PTR [ebx]).state, 1
-
-            .IF peek1 == 0
-               mov peek1, ebx
-            .ELSE
-               inc numAttempts
-               mov eax, peek1
-               mov dh, (Card PTR [ebx]).symbol
-               mov dl, (Card PTR [eax]).symbol
-
-               .IF dh == dl
-                  mov (Card PTR [ebx]).state, 2
-                  mov (Card PTR [eax]).state, 2
-                  inc numFound
-               .ELSE
-                  mov (Card PTR [ebx]).state, 3
-                  mov (Card PTR [eax]).state, 3
-               .ENDIF
-               mov peek1, 0
-            .ENDIF
-
-
-         .ENDIF
+         mPeekCard
       .ELSEIF AX == 2960h ; ~
-         mov ecx, GRID_ROWS
-         mov ebx, 0 ; y
-         mov edi, 0
-      
-       loop_row_1:
-         push ecx
-         mov ecx, GRID_COLS
-         mov esi, 0 ; x
-      
-       loop_col_1:
-         mov al, (Card PTR grid[0 + edi * TYPE grid]).state
-         .IF al == 0
-            mov (Card PTR grid[0 + edi * TYPE grid]).state, 3
-         .ENDIF
-      
-         inc esi
-         inc edi
-         loop loop_col_1
-      
-         inc ebx
-         pop ecx
-         loop loop_row_1
-
+         mRevealBoard
       .ELSE
          mov AX, 0
       .ENDIF
@@ -435,11 +446,7 @@ call Randomize
    call Crlf
 
 
-   
    exit
 main ENDP
-
-
-
 
 END main

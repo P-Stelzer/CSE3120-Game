@@ -20,9 +20,9 @@ cardColPadding BYTE 4
 cursorX BYTE 0
 cursorY BYTE 0
 
-; GRID_ROWS * GRID_COLS MUST BE EVEN
-GRID_ROWS EQU 3
-GRID_COLS EQU 6
+; GRID_ROWS * GRID_COLS MUST BE EVEN AND NOT GREATER THAN 2*POOL_SIZE
+GRID_ROWS EQU 5 ; suggested max 9
+GRID_COLS EQU 8 ; suggested max 16
 GRID_ELEM_SIZE EQU TYPE Card
 grid Card GRID_ROWS * GRID_COLS DUP(<33,0>)
 gridOriginX BYTE 3
@@ -32,7 +32,7 @@ NUM_SYMBOLS EQU (GRID_ROWS * GRID_COLS) / 2
 randSymbols BYTE NUM_SYMBOLS*2 DUP(?)
 
 
-peakOne DWORD 0
+peek1 DWORD 0
 
 numFound BYTE 0
 numAttempts DWORD 0
@@ -49,6 +49,16 @@ infoStr1 BYTE "Attempted Matches: ",0
 infoStr2 BYTE "Matches Remaining: ",0
 
 winMessage BYTE "You matched all the cards!",0
+
+; pool declaration must be fragmented like this else the rest of the memory tweaks
+POOL_SIZE EQU 73
+symbolPool BYTE "ABCDEFGHIJKLM"
+           BYTE "NOPQRSTUVWXYZ"
+           BYTE "abcdefghijklm"
+           BYTE "nopqrstuvwxyz~"
+           BYTE "!$%&+"
+           BYTE "0123456789"
+           BYTE "<=>?@"
 
 
 .code
@@ -189,7 +199,7 @@ DrawBoard PROC USES ecx ebx edi eax esi
    ret
 DrawBoard ENDP
 
-DrawInfo PROC
+DrawInfo PROC USES eax edx
 
    mov eax, white
    call SetTextColor
@@ -254,19 +264,35 @@ ENDM
 ; === MAIN ==========================================================
 main PROC
 
-  mov al, (Card PTR grid).state
+call Randomize
 
 ; GENERATE RANDOM SYMBOLS IN PAIRS
+   ; SHUFFLE Pool
+   mov ecx, POOL_SIZE
+   mov ebx, 0
+ pool_rand_loop:
+   mov eax, POOL_SIZE
+   call RandomRange
+   mov dl, symbolPool[ebx]
+   push edx
+   mov dl, symbolPool[eax]
+   mov symbolPool[ebx], dl
+   pop edx
+   mov symbolPool[eax], dl
+   inc ebx
+   loop pool_rand_loop
+
    ; FILL ARRAY
    mov ecx, NUM_SYMBOLS
    mov ebx, 0
-   mov al, 97
+   mov esi, 0
 
  char_init_loop:
+   mov al, symbolPool[esi]
    mov randSymbols[ebx], al
    inc ebx
    mov randSymbols[ebx], al
-   inc al
+   inc esi
    inc ebx
    loop char_init_loop
 
@@ -350,11 +376,11 @@ main PROC
          .IF dl == 0
             mov (Card PTR [ebx]).state, 1
 
-            .IF peakOne == 0
-               mov peakOne, ebx
+            .IF peek1 == 0
+               mov peek1, ebx
             .ELSE
                inc numAttempts
-               mov eax, peakOne
+               mov eax, peek1
                mov dh, (Card PTR [ebx]).symbol
                mov dl, (Card PTR [eax]).symbol
 
@@ -366,7 +392,7 @@ main PROC
                   mov (Card PTR [ebx]).state, 3
                   mov (Card PTR [eax]).state, 3
                .ENDIF
-               mov peakOne, 0
+               mov peek1, 0
             .ENDIF
 
 

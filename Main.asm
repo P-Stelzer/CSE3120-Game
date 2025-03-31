@@ -5,7 +5,7 @@ INCLUDE Irvine32.inc
 .data
 Card STRUCT
    symbol BYTE ?
-   state BYTE 0 ; 0=hidden, 1=peek, 2=found
+   state BYTE 0 ; 0=hidden, 1=peek, 2=found, 3=wrong
 Card ENDS
 
 DOT_CHAR EQU 249
@@ -106,9 +106,11 @@ DrawBoard PROC USES ecx ebx edi eax esi
    mov eax, esi
    mov ah, (Card PTR grid[0 + edi * TYPE grid]).state
    .IF al == cursorX && bl == cursorY
-      mov eax, green
+      mov eax, lightGreen
    .ELSEIF ah == 1
-      mov eax, lightRed
+      mov eax, cyan
+   .ELSEIF ah == 3
+      mov eax, red
    .ELSE
       mov eax, white
    .ENDIF
@@ -119,6 +121,9 @@ DrawBoard PROC USES ecx ebx edi eax esi
    mov al, (Card PTR grid[0 + edi * TYPE grid]).state
    .IF al == 0
       mov al, CARD_BACK_CHAR
+   .ELSEIF al == 3
+      mov (Card PTR grid[0 + edi * TYPE grid]).state, 0
+      mov al, (Card PTR grid[0 + edi * TYPE grid]).symbol
    .ELSE
       mov al, (Card PTR grid[0 + edi * TYPE grid]).symbol
    .ENDIF
@@ -134,7 +139,8 @@ DrawBoard PROC USES ecx ebx edi eax esi
 
    inc ebx
    pop ecx
-   loop draw_row
+   dec ecx
+   jnz draw_row
 
    ret
 DrawBoard ENDP
@@ -214,15 +220,37 @@ main PROC
       .ELSEIF AX == 4B00h ; left
          INVOKE MoveLeft
       .ELSEIF AX == 3920h ; space
+         ; GET CARD INDEX UNDER CURSOR
          mov eax, 0
          mov al, cursorY
          mov bl, GRID_COLS
          mul bl
          add al, cursorX
+
+         ; LOAD CARD AND CHECK STATE
          lea ebx, grid[0 + eax * TYPE grid]
          mov dl, (Card PTR [ebx]).state
          .IF dl == 0
             mov (Card PTR [ebx]).state, 1
+
+            .IF peakOne == 0
+               mov peakOne, ebx
+            .ELSE
+               mov eax, peakOne
+               mov dh, (Card PTR [ebx]).symbol
+               mov dl, (Card PTR [eax]).symbol
+
+               .IF dh == dl
+                  mov (Card PTR [ebx]).state, 2
+                  mov (Card PTR [eax]).state, 2
+               .ELSE
+                  mov (Card PTR [ebx]).state, 3
+                  mov (Card PTR [eax]).state, 3
+               .ENDIF
+               mov peakOne, 0
+            .ENDIF
+
+
          .ENDIF
 
       .ELSE

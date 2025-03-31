@@ -1,4 +1,4 @@
-Microsoft (R) Macro Assembler Version 14.43.34809.0	    03/30/25 22:27:43
+Microsoft (R) Macro Assembler Version 14.43.34809.0	    03/30/25 23:00:36
 Main.asm						     Page 1 - 1
 
 
@@ -35,15 +35,16 @@ Main.asm						     Page 1 - 1
  00000000 00			cursorX BYTE 0
  00000001 00			cursorY BYTE 0
 
- = 00000003			GRID_ROWS EQU 3
- = 00000004			GRID_COLS EQU 4
+				; GRID_ROWS * GRID_COLS MUST BE EVEN
+ = 00000006			GRID_ROWS EQU 6
+ = 00000008			GRID_COLS EQU 8
  = 00000002			GRID_ELEM_SIZE EQU TYPE Card
- 00000002  0000000C [		grid Card GRID_ROWS * GRID_COLS DUP(<,>)
-	    00 00
+ 00000002  00000030 [		grid Card GRID_ROWS * GRID_COLS DUP(<33,0>)
+	    21 00
 	   ]
 
- = 00000006			NUM_SYMBOLS EQU (GRID_ROWS * GRID_COLS) / 2
- 0000001A  0000000C [		randSymbols BYTE NUM_SYMBOLS*2 DUP(?)
+ = 00000018			NUM_SYMBOLS EQU (GRID_ROWS * GRID_COLS) / 2
+ 00000062  00000030 [		randSymbols BYTE NUM_SYMBOLS*2 DUP(?)
 	    00
 	   ]
 
@@ -60,7 +61,7 @@ Main.asm						     Page 1 - 1
 				 .IF dl >= 0 && dl < GRID_COLS
  00000008  80 FA 00	   *	    cmp    dl, 000h
  0000000B  72 0B	   *	    jb	@C0001
- 0000000D  80 FA 04	   *	    cmp    dl, GRID_COLS
+ 0000000D  80 FA 08	   *	    cmp    dl, GRID_COLS
  00000010  73 06	   *	    jae    @C0001
  00000012  88 15 00000000 R	    mov cursorX, dl
 				 .ENDIF
@@ -79,7 +80,7 @@ Main.asm						     Page 1 - 1
 				 .IF dl >= 0 && dl < GRID_COLS
  00000021  80 FA 00	   *	    cmp    dl, 000h
  00000024  72 0B	   *	    jb	@C0004
- 00000026  80 FA 04	   *	    cmp    dl, GRID_COLS
+ 00000026  80 FA 08	   *	    cmp    dl, GRID_COLS
  00000029  73 06	   *	    jae    @C0004
  0000002B  88 15 00000000 R	    mov cursorX, dl
 				 .ENDIF
@@ -99,7 +100,7 @@ Main.asm						     Page 1 - 1
 				 .IF dh >= 0 && dh < GRID_ROWS
  0000003A  80 FE 00	   *	    cmp    dh, 000h
  0000003D  72 0B	   *	    jb	@C0007
- 0000003F  80 FE 03	   *	    cmp    dh, GRID_ROWS
+ 0000003F  80 FE 06	   *	    cmp    dh, GRID_ROWS
  00000042  73 06	   *	    jae    @C0007
  00000044  88 35 00000001 R	    mov cursorY, dh
 				 .ENDIF
@@ -119,7 +120,7 @@ Main.asm						     Page 1 - 1
 				 .IF dh >= 0 && dh < GRID_ROWS
  00000053  80 FE 00	   *	    cmp    dh, 000h
  00000056  72 0B	   *	    jb	@C000A
- 00000058  80 FE 03	   *	    cmp    dh, GRID_ROWS
+ 00000058  80 FE 06	   *	    cmp    dh, GRID_ROWS
  0000005B  73 06	   *	    jae    @C000A
  0000005D  88 35 00000001 R	    mov cursorY, dh
 				 .ENDIF
@@ -139,13 +140,13 @@ Main.asm						     Page 1 - 1
  00000068  56		   *	    push   esi
  00000069  E8 00000000 E	   call Clrscr
 
- 0000006E  B9 00000003		   mov ecx, GRID_ROWS
+ 0000006E  B9 00000006		   mov ecx, GRID_ROWS
  00000073  BB 00000000		   mov ebx, 0 ; y
  00000078  BF 00000000		   mov edi, 0
 
  0000007D			 draw_row:
  0000007D  51			   push ecx
- 0000007E  B9 00000004		   mov ecx, GRID_COLS
+ 0000007E  B9 00000008		   mov ecx, GRID_COLS
  00000083  BE 00000000		   mov esi, 0 ; x
 
  00000088			 draw_col:
@@ -166,7 +167,7 @@ Main.asm						     Page 1 - 1
 
 
 
- 000000AB  8A 84 73		   mov al, (Card PTR grid[ebx + esi * TYPE grid]).state
+ 000000AB  8A 04 7D		   mov al, (Card PTR grid[0 + edi * TYPE grid]).state
 	   00000003 R
 				   .IF al == 0
  000000B2  0A C0	   *	    or	al, al
@@ -175,13 +176,13 @@ Main.asm						     Page 1 - 1
 				   .ELSE
  000000B8  EB 07	   *	    jmp    @C0013
  000000BA		   *@C0011:
- 000000BA  8A 84 73		      mov al, (Card PTR grid[ebx + esi * TYPE grid]).symbol
+ 000000BA  8A 04 7D		      mov al, (Card PTR grid[0 + edi * TYPE grid]).symbol
 	   00000002 R
 				   .ENDIF
  000000C1		   *@C0013:
 
- 000000C1  8B D6		   mov edx, esi
- 000000C3  8A F3		   mov dh, bl
+ 000000C1  8B D6		   mov edx, esi ; set dl == x
+ 000000C3  8A F3		   mov dh, bl   ; set dh == y
  000000C5  E8 00000000 E	   call Gotoxy
  000000CA  E8 00000000 E	   call WriteChar
 
@@ -206,119 +207,114 @@ Main.asm						     Page 1 - 1
 				; === MAIN ==========================================================
  000000DD			main PROC
 
+ 000000DD  A0 00000003 R	  mov al, (Card PTR grid).state
+
 				; GENERATE RANDOM SYMBOLS IN PAIRS
 				   ; FILL ARRAY
- 000000DD  B9 00000006		   mov ecx, NUM_SYMBOLS
- 000000E2  BB 00000000		   mov ebx, 0
- 000000E7  B0 61		   mov al, 97
+ 000000E2  B9 00000018		   mov ecx, NUM_SYMBOLS
+ 000000E7  BB 00000000		   mov ebx, 0
+ 000000EC  B0 61		   mov al, 97
 
- 000000E9			 char_init_loop:
- 000000E9  88 83 0000001A R	   mov randSymbols[ebx], al
- 000000EF  43			   inc ebx
- 000000F0  88 83 0000001A R	   mov randSymbols[ebx], al
- 000000F6  FE C0		   inc al
- 000000F8  43			   inc ebx
- 000000F9  E2 EE		   loop char_init_loop
+ 000000EE			 char_init_loop:
+ 000000EE  88 83 00000062 R	   mov randSymbols[ebx], al
+ 000000F4  43			   inc ebx
+ 000000F5  88 83 00000062 R	   mov randSymbols[ebx], al
+ 000000FB  FE C0		   inc al
+ 000000FD  43			   inc ebx
+ 000000FE  E2 EE		   loop char_init_loop
 
 				   ; SHUFFLE ARRAY
- 000000FB  B9 0000000C		   mov ecx, NUM_SYMBOLS*2
- 00000100  BB 00000000		   mov ebx, 0
- 00000105			 char_rand_loop:
- 00000105  B8 0000000C		   mov eax, NUM_SYMBOLS*2
- 0000010A  E8 00000000 E	   call RandomRange
- 0000010F  8A 93 0000001A R	   mov dl, randSymbols[ebx]
- 00000115  52			   push edx
- 00000116  8A 90 0000001A R	   mov dl, randSymbols[eax]
- 0000011C  88 93 0000001A R	   mov randSymbols[ebx], dl
- 00000122  5A			   pop edx
- 00000123  88 90 0000001A R	   mov randSymbols[eax], dl
- 00000129  43			   inc ebx
- 0000012A  E2 D9		   loop char_rand_loop
+ 00000100  B9 00000030		   mov ecx, NUM_SYMBOLS*2
+ 00000105  BB 00000000		   mov ebx, 0
+ 0000010A			 char_rand_loop:
+ 0000010A  B8 00000030		   mov eax, NUM_SYMBOLS*2
+ 0000010F  E8 00000000 E	   call RandomRange
+ 00000114  8A 93 00000062 R	   mov dl, randSymbols[ebx]
+ 0000011A  52			   push edx
+ 0000011B  8A 90 00000062 R	   mov dl, randSymbols[eax]
+ 00000121  88 93 00000062 R	   mov randSymbols[ebx], dl
+ 00000127  5A			   pop edx
+ 00000128  88 90 00000062 R	   mov randSymbols[eax], dl
+ 0000012E  43			   inc ebx
+ 0000012F  E2 D9		   loop char_rand_loop
 
 				   ; LOAD ARRAY INTO CARDS
- 0000012C  B9 00000003		   mov ecx, GRID_ROWS
- 00000131  BB 00000000		   mov ebx, 0 ; y
- 00000136  BF 00000000		   mov edi, 0
+ 00000131  B9 00000006		   mov ecx, GRID_ROWS
+ 00000136  BB 00000000		   mov ebx, 0 ; y
+ 0000013B  BF 00000000		   mov edi, 0
 
- 0000013B			 loop_row:
- 0000013B  51			   push ecx
- 0000013C  B9 00000004		   mov ecx, GRID_COLS
- 00000141  BE 00000000		   mov esi, 0 ; x
+ 00000140			 loop_row:
+ 00000140  51			   push ecx
+ 00000141  B9 00000008		   mov ecx, GRID_COLS
+ 00000146  BE 00000000		   mov esi, 0 ; x
 
- 00000146			 loop_col:
- 00000146  8A 87 0000001A R	   mov al, randSymbols[edi]
- 0000014C  88 84 73		   mov (Card PTR grid[ebx + esi * TYPE grid]).symbol, al
+ 0000014B			 loop_col:
+				   ; mov al, (Card PTR grid).state
+				   ; lea eax, (Card PTR grid).state
+ 0000014B  8A 87 00000062 R	   mov al, randSymbols[edi]
+ 00000151  88 04 7D		   mov (Card PTR grid[0 + edi * TYPE grid]).symbol, al
 	   00000002 R
+				   ; mov al, (Card PTR grid[ebx + esi * TYPE grid]).symbol
 
- 00000153  46			   inc esi
- 00000154  47			   inc edi
- 00000155  E2 EF		   loop loop_col
+ 00000158  46			   inc esi
+ 00000159  47			   inc edi
+ 0000015A  E2 EF		   loop loop_col
 
- 00000157  43			   inc ebx
- 00000158  59			   pop ecx
- 00000159  E2 E0		   loop loop_row
-
-
- 0000015B  E8 FFFFFF04		call DrawBoard
+ 0000015C  43			   inc ebx
+ 0000015D  59			   pop ecx
+ 0000015E  E2 E0		   loop loop_row
 
 
- 00000160  B0 F9		mov al, DOT_CHAR
- 00000162  E8 00000000 E	call WriteChar
-
- 00000167  8A 15 00000000 R	mov dl, cursorX
- 0000016D  8A 35 00000001 R	mov dh, cursorY
- 00000173  E8 00000000 E	call Gotoxy
-
-
- 00000178  BB 00000002		mov ebx, TYPE WORD
-				 .WHILE 1
- 0000017D		   *@C0014:
- 0000017D  E8 00000000 E	  call ReadChar
-				  .IF AX == 4D00h ; right
- 00000182  66| 3D 4D00	   *	    cmp    ax, 04D00h
- 00000186  75 07	   *	    jne    @C0015
-				   INVOKE MoveRight
- 00000188  E8 FFFFFE73	   *	    call   MoveRight
-				  .ELSEIF AX == 4800h ; up
- 0000018D  EB 25	   *	    jmp    @C0017
- 0000018F		   *@C0015:
- 0000018F  66| 3D 4800	   *	    cmp    ax, 04800h
- 00000193  75 07	   *	    jne    @C0018
-				   INVOKE MoveUp
- 00000195  E8 FFFFFE98	   *	    call   MoveUp
-				  .ELSEIF AX == 5000h ; down
- 0000019A  EB 18	   *	    jmp    @C001A
- 0000019C		   *@C0018:
- 0000019C  66| 3D 5000	   *	    cmp    ax, 05000h
- 000001A0  75 07	   *	    jne    @C001B
-				   INVOKE MoveDown
- 000001A2  E8 FFFFFEA4	   *	    call   MoveDown
-				  .ELSEIF AX == 4B00h ; left
- 000001A7  EB 0B	   *	    jmp    @C001D
- 000001A9		   *@C001B:
- 000001A9  66| 3D 4B00	   *	    cmp    ax, 04B00h
- 000001AD  75 05	   *	    jne    @C001E
-				   INVOKE MoveLeft
- 000001AF  E8 FFFFFE65	   *	    call   MoveLeft
-				  .ENDIF
- 000001B4		   *@C001E:
- 000001B4		   *@C001D:
- 000001B4		   *@C001A:
- 000001B4		   *@C0017:
- 000001B4  E8 FFFFFEAB		  call DrawBoard
-				 .ENDW
- 000001B9  EB C2	   *	    jmp    @C0014
-
-				 exit
- 000001BB  6A 00	   *	    push   +000000000h
- 000001BD  E8 00000000 E   *	    call   ExitProcess
- 000001C2			main ENDP
+				; GAME LOOP
+ 00000160  BB 00000002		   mov ebx, TYPE WORD
+				   .WHILE 1
+ 00000165		   *@C0014:
+ 00000165  E8 FFFFFEFA		      call DrawBoard
+ 0000016A  E8 00000000 E	      call ReadChar
+				      .IF AX == 4D00h ; right
+ 0000016F  66| 3D 4D00	   *	    cmp    ax, 04D00h
+ 00000173  75 07	   *	    jne    @C0015
+				         INVOKE MoveRight
+ 00000175  E8 FFFFFE86	   *	    call   MoveRight
+				      .ELSEIF AX == 4800h ; up
+ 0000017A  EB 25	   *	    jmp    @C0017
+ 0000017C		   *@C0015:
+ 0000017C  66| 3D 4800	   *	    cmp    ax, 04800h
+ 00000180  75 07	   *	    jne    @C0018
+				         INVOKE MoveUp
+ 00000182  E8 FFFFFEAB	   *	    call   MoveUp
+				      .ELSEIF AX == 5000h ; down
+ 00000187  EB 18	   *	    jmp    @C001A
+ 00000189		   *@C0018:
+ 00000189  66| 3D 5000	   *	    cmp    ax, 05000h
+ 0000018D  75 07	   *	    jne    @C001B
+				         INVOKE MoveDown
+ 0000018F  E8 FFFFFEB7	   *	    call   MoveDown
+				      .ELSEIF AX == 4B00h ; left
+ 00000194  EB 0B	   *	    jmp    @C001D
+ 00000196		   *@C001B:
+ 00000196  66| 3D 4B00	   *	    cmp    ax, 04B00h
+ 0000019A  75 05	   *	    jne    @C001E
+				         INVOKE MoveLeft
+ 0000019C  E8 FFFFFE78	   *	    call   MoveLeft
+				      .ENDIF
+				   .ENDW
+ 000001A1		   *@C001E:
+ 000001A1		   *@C001D:
+ 000001A1		   *@C001A:
+ 000001A1		   *@C0017:
+ 000001A1  EB C2	   *	    jmp    @C0014
+				   
+				   exit
+ 000001A3  6A 00	   *	    push   +000000000h
+ 000001A5  E8 00000000 E   *	    call   ExitProcess
+ 000001AA			main ENDP
 
 
 
 
 				END main
-Microsoft (R) Macro Assembler Version 14.43.34809.0	    03/30/25 22:27:43
+Microsoft (R) Macro Assembler Version 14.43.34809.0	    03/30/25 23:00:36
 Main.asm						     Symbols 2 - 1
 
 
@@ -415,8 +411,8 @@ Segments and Groups:
 
 FLAT . . . . . . . . . . . . . .	GROUP
 STACK  . . . . . . . . . . . . .	32 Bit	 00001000 Para	  Stack	  'STACK'	 
-_DATA  . . . . . . . . . . . . .	32 Bit	 00000026 Para	  Public  'DATA'	
-_TEXT  . . . . . . . . . . . . .	32 Bit	 000001C2 Para	  Public  'CODE'	
+_DATA  . . . . . . . . . . . . .	32 Bit	 00000092 Para	  Public  'DATA'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 000001AA Para	  Public  'CODE'	
 
 
 Procedures, parameters, and locals:
@@ -530,11 +526,11 @@ WriteStackFrame  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 WriteString  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteToFile  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteWindowsMsg  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-main . . . . . . . . . . . . . .	P Near	 000000DD _TEXT	Length= 000000E5 Public STDCALL
-  char_init_loop . . . . . . . .	L Near	 000000E9 _TEXT	
-  char_rand_loop . . . . . . . .	L Near	 00000105 _TEXT	
-  loop_row . . . . . . . . . . .	L Near	 0000013B _TEXT	
-  loop_col . . . . . . . . . . .	L Near	 00000146 _TEXT	
+main . . . . . . . . . . . . . .	P Near	 000000DD _TEXT	Length= 000000CD Public STDCALL
+  char_init_loop . . . . . . . .	L Near	 000000EE _TEXT	
+  char_rand_loop . . . . . . . .	L Near	 0000010A _TEXT	
+  loop_row . . . . . . . . . . .	L Near	 00000140 _TEXT	
+  loop_col . . . . . . . . . . .	L Near	 0000014B _TEXT	
 printf . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
 scanf  . . . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
 wsprintfA  . . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External C
@@ -603,9 +599,9 @@ GENERIC_ALL  . . . . . . . . . .	Number	 10000000h
 GENERIC_EXECUTE  . . . . . . . .	Number	 20000000h   
 GENERIC_READ . . . . . . . . . .	Number	 -80000000h   
 GENERIC_WRITE  . . . . . . . . .	Number	 40000000h   
-GRID_COLS  . . . . . . . . . . .	Number	 00000004h   
+GRID_COLS  . . . . . . . . . . .	Number	 00000008h   
 GRID_ELEM_SIZE . . . . . . . . .	Number	 00000002h   
-GRID_ROWS  . . . . . . . . . . .	Number	 00000003h   
+GRID_ROWS  . . . . . . . . . . .	Number	 00000006h   
 GetCommandLine . . . . . . . . .	Text   	 GetCommandLineA
 HANDLE . . . . . . . . . . . . .	Text   	 DWORD
 HEAP_GENERATE_EXCEPTIONS . . . .	Number	 00000004h   
@@ -660,7 +656,7 @@ MOUSE_EVENT  . . . . . . . . . .	Number	 00000002h
 MessageBox . . . . . . . . . . .	Text   	 MessageBoxA
 NULL . . . . . . . . . . . . . .	Number	 00000000h   
 NUMLOCK_ON . . . . . . . . . . .	Number	 00000020h   
-NUM_SYMBOLS  . . . . . . . . . .	Number	 00000006h   
+NUM_SYMBOLS  . . . . . . . . . .	Number	 00000018h   
 OPEN_ALWAYS  . . . . . . . . . .	Number	 00000004h   
 OPEN_EXISTING  . . . . . . . . .	Number	 00000003h   
 PeekConsoleInput . . . . . . . .	Text   	 PeekConsoleInputA
@@ -776,7 +772,7 @@ lightGreen . . . . . . . . . . .	Number	 0000000Ah
 lightMagenta . . . . . . . . . .	Number	 0000000Dh   
 lightRed . . . . . . . . . . . .	Number	 0000000Ch   
 magenta  . . . . . . . . . . . .	Number	 00000005h   
-randSymbols  . . . . . . . . . .	Byte	 0000001A _DATA	
+randSymbols  . . . . . . . . . .	Byte	 00000062 _DATA	
 red  . . . . . . . . . . . . . .	Number	 00000004h   
 white  . . . . . . . . . . . . .	Number	 0000000Fh   
 wsprintf . . . . . . . . . . . .	Text   	 wsprintfA

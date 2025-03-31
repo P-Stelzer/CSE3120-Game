@@ -14,10 +14,11 @@ CARD_BACK_CHAR EQU 35
 cursorX BYTE 0
 cursorY BYTE 0
 
-GRID_ROWS EQU 3
-GRID_COLS EQU 4
+; GRID_ROWS * GRID_COLS MUST BE EVEN
+GRID_ROWS EQU 6
+GRID_COLS EQU 8
 GRID_ELEM_SIZE EQU TYPE Card
-grid Card GRID_ROWS * GRID_COLS DUP(<,>)
+grid Card GRID_ROWS * GRID_COLS DUP(<33,0>)
 
 NUM_SYMBOLS EQU (GRID_ROWS * GRID_COLS) / 2
 randSymbols BYTE NUM_SYMBOLS*2 DUP(?)
@@ -109,15 +110,15 @@ DrawBoard PROC USES ecx ebx edi eax esi
 
 
 
-   mov al, (Card PTR grid[ebx + esi * TYPE grid]).state
+   mov al, (Card PTR grid[0 + edi * TYPE grid]).state
    .IF al == 0
       mov al, CARD_BACK_CHAR
    .ELSE
-      mov al, (Card PTR grid[ebx + esi * TYPE grid]).symbol
+      mov al, (Card PTR grid[0 + edi * TYPE grid]).symbol
    .ENDIF
 
-   mov edx, esi
-   mov dh, bl
+   mov edx, esi ; set dl == x
+   mov dh, bl   ; set dh == y
    call Gotoxy
    call WriteChar
 
@@ -135,6 +136,8 @@ DrawBoard ENDP
 
 ; === MAIN ==========================================================
 main PROC
+
+  mov al, (Card PTR grid).state
 
 ; GENERATE RANDOM SYMBOLS IN PAIRS
    ; FILL ARRAY
@@ -176,8 +179,11 @@ main PROC
    mov esi, 0 ; x
 
  loop_col:
+   ; mov al, (Card PTR grid).state
+   ; lea eax, (Card PTR grid).state
    mov al, randSymbols[edi]
-   mov (Card PTR grid[ebx + esi * TYPE grid]).symbol, al
+   mov (Card PTR grid[0 + edi * TYPE grid]).symbol, al
+   ; mov al, (Card PTR grid[ebx + esi * TYPE grid]).symbol
 
    inc esi
    inc edi
@@ -188,33 +194,23 @@ main PROC
    loop loop_row
 
 
-call DrawBoard
-
-
-mov al, DOT_CHAR
-call WriteChar
-
-mov dl, cursorX
-mov dh, cursorY
-call Gotoxy
-
-
-mov ebx, TYPE WORD
- .WHILE 1
-  call ReadChar
-  .IF AX == 4D00h ; right
-   INVOKE MoveRight
-  .ELSEIF AX == 4800h ; up
-   INVOKE MoveUp
-  .ELSEIF AX == 5000h ; down
-   INVOKE MoveDown
-  .ELSEIF AX == 4B00h ; left
-   INVOKE MoveLeft
-  .ENDIF
-  call DrawBoard
- .ENDW
-
- exit
+; GAME LOOP
+   mov ebx, TYPE WORD
+   .WHILE 1
+      call DrawBoard
+      call ReadChar
+      .IF AX == 4D00h ; right
+         INVOKE MoveRight
+      .ELSEIF AX == 4800h ; up
+         INVOKE MoveUp
+      .ELSEIF AX == 5000h ; down
+         INVOKE MoveDown
+      .ELSEIF AX == 4B00h ; left
+         INVOKE MoveLeft
+      .ENDIF
+   .ENDW
+   
+   exit
 main ENDP
 
 

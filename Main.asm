@@ -1,3 +1,8 @@
+; Authors:
+;    Peter Stelzer
+;    Kyle Gibson
+
+
 INCLUDE Irvine32.inc
 
 
@@ -30,6 +35,7 @@ randSymbols BYTE NUM_SYMBOLS*2 DUP(?)
 peakOne DWORD 0
 
 numFound BYTE 0
+numAttempts DWORD 0
 
 
 welcomeMessage1 BYTE "Welcome to Memory Matching!...",0
@@ -38,6 +44,11 @@ welcomeMessage3 BYTE "Reveal the selected card with space...",0
 welcomeMessage4 BYTE "Each card has exactly one match...",0
 welcomeMessage5 BYTE "If the last two revealed cards match, they remain visible...",0
 welcomeMessage6 BYTE "Find all matches to win!...",0
+
+infoStr1 BYTE "Attempted Matches: ",0
+infoStr2 BYTE "Matches Remaining: ",0
+
+winMessage BYTE "You matched all the cards!",0
 
 
 .code
@@ -178,8 +189,57 @@ DrawBoard PROC USES ecx ebx edi eax esi
    ret
 DrawBoard ENDP
 
+DrawInfo PROC
+
+   mov eax, white
+   call SetTextColor
+
+   mov dl, gridOriginX
+   mov dh, gridOriginY
+   mov al, GRID_ROWS
+   mul cardRowPadding
+   add al, 2
+   add dh, al
+
+   push edx
+
+   call Gotoxy
+   
+   mov EDX, OFFSET infoStr1
+
+   call WriteString
+
+   mov eax, numAttempts
+
+   call WriteDec
+
+   pop edx
+   inc dh
+
+   call Gotoxy
+   
+   .IF numFound >= NUM_SYMBOLS
+      mov EDX, OFFSET winMessage
+      call WriteString
+   .ELSE
+      mov EDX, OFFSET infoStr2
+      call WriteString
+
+      mov eax, NUM_SYMBOLS
+      sub al, numFound
+      call WriteDec
+   .ENDIF
+
+   
+
+   ret
+
+DrawInfo ENDP
+
 
 mShowWelc MACRO message
+   call Gotoxy
+   push edx
    mov edx, OFFSET message
    call WriteString
    call ReadChar
@@ -187,6 +247,7 @@ mShowWelc MACRO message
    .IF AX == 2960h
       jmp game_loop
    .ENDIF
+   pop edx
 ENDM
 
 
@@ -265,6 +326,7 @@ main PROC
    mov ebx, TYPE WORD
    .WHILE numFound < NUM_SYMBOLS
       call DrawBoard
+      call DrawInfo
       call ReadChar
       .IF AX == 4D00h ; right
          INVOKE MoveRight
@@ -291,6 +353,7 @@ main PROC
             .IF peakOne == 0
                mov peakOne, ebx
             .ELSE
+               inc numAttempts
                mov eax, peakOne
                mov dh, (Card PTR [ebx]).symbol
                mov dl, (Card PTR [eax]).symbol
@@ -338,6 +401,14 @@ main PROC
    .ENDW
 
    call DrawBoard
+
+   call DrawInfo
+
+   call ReadChar
+
+   call Crlf
+
+
    
    exit
 main ENDP

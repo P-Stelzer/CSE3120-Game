@@ -24,6 +24,9 @@ NUM_SYMBOLS EQU (GRID_ROWS * GRID_COLS) / 2
 randSymbols BYTE NUM_SYMBOLS*2 DUP(?)
 
 
+peakOne DWORD 0
+
+
 
 .code
 
@@ -88,7 +91,7 @@ MoveDown ENDP
 
 ; === DrawBoard ===============================
 DrawBoard PROC USES ecx ebx edi eax esi
-   call Clrscr
+   ; call Clrscr
 
    mov ecx, GRID_ROWS
    mov ebx, 0 ; y
@@ -101,8 +104,11 @@ DrawBoard PROC USES ecx ebx edi eax esi
 
  draw_col:
    mov eax, esi
+   mov ah, (Card PTR grid[0 + edi * TYPE grid]).state
    .IF al == cursorX && bl == cursorY
       mov eax, green
+   .ELSEIF ah == 1
+      mov eax, lightRed
    .ELSE
       mov eax, white
    .ENDIF
@@ -207,6 +213,20 @@ main PROC
          INVOKE MoveDown
       .ELSEIF AX == 4B00h ; left
          INVOKE MoveLeft
+      .ELSEIF AX == 3920h ; space
+         mov eax, 0
+         mov al, cursorY
+         mov bl, GRID_COLS
+         mul bl
+         add al, cursorX
+         lea ebx, grid[0 + eax * TYPE grid]
+         mov dl, (Card PTR [ebx]).state
+         .IF dl == 0
+            mov (Card PTR [ebx]).state, 1
+         .ENDIF
+
+      .ELSE
+         mov AX, 0
       .ENDIF
    .ENDW
    

@@ -1,4 +1,4 @@
-Microsoft (R) Macro Assembler Version 14.43.34809.0	    03/31/25 14:08:25
+Microsoft (R) Macro Assembler Version 14.43.34809.0	    03/31/25 14:47:58
 Main.asm						     Page 1 - 1
 
 
@@ -273,7 +273,7 @@ Main.asm						     Page 1 - 1
  00000074  E8 00000000 E	   call SetTextColor
 
 
-				   ; Select Card State
+				   ; Select Glyph
  00000079  8A 04 7D		   mov al, (Card PTR grid[0 + edi * TYPE grid]).state
 	   00000005 R
 				   .IF al == 0
@@ -734,7 +734,7 @@ Main.asm						     Page 1 - 1
 				; GAME LOOP
  000003A9  BB 00000002		   mov ebx, TYPE WORD
 				   .WHILE numFound < NUM_SYMBOLS
- 000003AE  E9 00000188	   *	    jmp    @C0026
+ 000003AE  E9 00000187	   *	    jmp    @C0026
  000003B3		   *@C0027:
  000003B3  E8 FFFFFC48		      call DrawBoard
  000003B8  E8 FFFFFD2F		      call DrawInfo
@@ -756,12 +756,12 @@ Main.asm						     Page 1 - 1
  000003DC  8A 15 00000002 R  1	 mov dl, cursorX
  000003E2  FE C2	     1	 inc dl
  000003E4  80 FA 00	   *	    cmp    dl, 000h
- 000003E7  0F 82 0000014E  *	    jb	@C002A
+ 000003E7  0F 82 0000014D  *	    jb	@C002A
  000003ED  80 FA 08	   *	    cmp    dl, GRID_COLS
- 000003F0  0F 83 00000145  *	    jae    @C002A
+ 000003F0  0F 83 00000144  *	    jae    @C002A
  000003F6  88 15 00000002 R  1	    mov cursorX, dl
 				      .ELSEIF AX == 4800h ; up
- 000003FC  E9 0000013A	   *	    jmp    @C002D
+ 000003FC  E9 00000139	   *	    jmp    @C002D
  00000401		   *@C0028:
  00000401  66| 3D 4800	   *	    cmp    ax, 04800h
  00000405  75 25	   *	    jne    @C002E
@@ -769,12 +769,12 @@ Main.asm						     Page 1 - 1
  00000407  8A 35 00000003 R  1	 mov dh, cursorY
  0000040D  FE CE	     1	 dec dh
  0000040F  80 FE 00	   *	    cmp    dh, 000h
- 00000412  0F 82 00000123  *	    jb	@C0030
+ 00000412  0F 82 00000122  *	    jb	@C0030
  00000418  80 FE 05	   *	    cmp    dh, GRID_ROWS
- 0000041B  0F 83 0000011A  *	    jae    @C0030
+ 0000041B  0F 83 00000119  *	    jae    @C0030
  00000421  88 35 00000003 R  1	    mov cursorY, dh
 				      .ELSEIF AX == 5000h ; down
- 00000427  E9 0000010F	   *	    jmp    @C0033
+ 00000427  E9 0000010E	   *	    jmp    @C0033
  0000042C		   *@C002E:
  0000042C  66| 3D 5000	   *	    cmp    ax, 05000h
  00000430  75 25	   *	    jne    @C0034
@@ -782,12 +782,12 @@ Main.asm						     Page 1 - 1
  00000432  8A 35 00000003 R  1	 mov dh, cursorY
  00000438  FE C6	     1	 inc dh
  0000043A  80 FE 00	   *	    cmp    dh, 000h
- 0000043D  0F 82 000000F8  *	    jb	@C0036
+ 0000043D  0F 82 000000F7  *	    jb	@C0036
  00000443  80 FE 05	   *	    cmp    dh, GRID_ROWS
- 00000446  0F 83 000000EF  *	    jae    @C0036
+ 00000446  0F 83 000000EE  *	    jae    @C0036
  0000044C  88 35 00000003 R  1	    mov cursorY, dh
 				      .ELSEIF AX == 4B00h ; left
- 00000452  E9 000000E4	   *	    jmp    @C0039
+ 00000452  E9 000000E3	   *	    jmp    @C0039
  00000457		   *@C0034:
  00000457  66| 3D 4B00	   *	    cmp    ax, 04B00h
  0000045B  75 25	   *	    jne    @C003A
@@ -795,12 +795,12 @@ Main.asm						     Page 1 - 1
  0000045D  8A 15 00000002 R  1	 mov dl, cursorX
  00000463  FE CA	     1	 dec dl
  00000465  80 FA 00	   *	    cmp    dl, 000h
- 00000468  0F 82 000000CD  *	    jb	@C003C
+ 00000468  0F 82 000000CC  *	    jb	@C003C
  0000046E  80 FA 08	   *	    cmp    dl, GRID_COLS
- 00000471  0F 83 000000C4  *	    jae    @C003C
+ 00000471  0F 83 000000C3  *	    jae    @C003C
  00000477  88 15 00000002 R  1	    mov cursorX, dl
 				      .ELSEIF AX == 3920h ; space
- 0000047D  E9 000000B9	   *	    jmp    @C003F
+ 0000047D  E9 000000B8	   *	    jmp    @C003F
  00000482		   *@C003A:
  00000482  66| 3D 3920	   *	    cmp    ax, 03920h
  00000486  75 72	   *	    jne    @C0040
@@ -814,7 +814,7 @@ Main.asm						     Page 1 - 1
 	   00000004 R
  000004A3  8A 53 01	     1	   mov dl, (Card PTR [ebx]).state
  000004A6  0A D2	   *	    or	dl, dl
- 000004A8  0F 85 0000008D  *	    jne    @C0042
+ 000004A8  0F 85 0000008C  *	    jne    @C0042
  000004AE  C6 43 01 01	     1	      mov (Card PTR [ebx]).state, 1
  000004B2  83 3D 0000007E R
 	   00		   *	    cmp    peek1, 0
@@ -840,7 +840,7 @@ Main.asm						     Page 1 - 1
 	   00000000
  000004F8		   *@C0046:
 				      .ELSEIF AX == 2960h ; ~
- 000004F8  EB 41	   *	    jmp    @C004A
+ 000004F8  EB 40	   *	    jmp    @C004A
  000004FA		   *@C0040:
  000004FA  66| 3D 2960	   *	    cmp    ax, 02960h
  000004FE  75 37	   *	    jne    @C004B
@@ -867,43 +867,43 @@ Main.asm						     Page 1 - 1
  00000532  59		     1	   pop ecx
  00000533  E2 DA	     1	   loop loop_row_1
 				      .ELSE
- 00000535  EB 04	   *	    jmp    @C004F
+ 00000535  EB 03	   *	    jmp    @C004F
  00000537		   *@C004B:
- 00000537  66| B8 0000		         mov AX, 0
+ 00000537  66| 0B C0		         or ax,ax
 				      .ENDIF
 				   .ENDW
- 0000053B		   *@C004F:
- 0000053B		   *@C004A:
- 0000053B		   *@C003F:
- 0000053B		   *@C0039:
- 0000053B		   *@C0033:
- 0000053B		   *@C002D:
- 0000053B		   *@C002A:
- 0000053B		   *@C0030:
- 0000053B		   *@C0036:
- 0000053B		   *@C003C:
- 0000053B		   *@C0042:
- 0000053B		   *@C0026:
- 0000053B  80 3D 00000082 R
+ 0000053A		   *@C004F:
+ 0000053A		   *@C004A:
+ 0000053A		   *@C003F:
+ 0000053A		   *@C0039:
+ 0000053A		   *@C0033:
+ 0000053A		   *@C002D:
+ 0000053A		   *@C002A:
+ 0000053A		   *@C0030:
+ 0000053A		   *@C0036:
+ 0000053A		   *@C003C:
+ 0000053A		   *@C0042:
+ 0000053A		   *@C0026:
+ 0000053A  80 3D 00000082 R
 	   14		   *	    cmp    numFound, NUM_SYMBOLS
- 00000542  0F 82 FFFFFE6B  *	    jb	@C0027
+ 00000541  0F 82 FFFFFE6C  *	    jb	@C0027
 
- 00000548  E8 FFFFFAB3		   call DrawBoard
+ 00000547  E8 FFFFFAB4		   call DrawBoard
 
- 0000054D  E8 FFFFFB9A		   call DrawInfo
+ 0000054C  E8 FFFFFB9B		   call DrawInfo
 
- 00000552  E8 00000000 E	   call ReadChar
+ 00000551  E8 00000000 E	   call ReadChar
 
- 00000557  E8 00000000 E	   call Crlf
+ 00000556  E8 00000000 E	   call Crlf
 
 
 				   exit
- 0000055C  6A 00	   *	    push   +000000000h
- 0000055E  E8 00000000 E   *	    call   ExitProcess
- 00000563			main ENDP
+ 0000055B  6A 00	   *	    push   +000000000h
+ 0000055D  E8 00000000 E   *	    call   ExitProcess
+ 00000562			main ENDP
 
 				END main
-Microsoft (R) Macro Assembler Version 14.43.34809.0	    03/31/25 14:08:25
+Microsoft (R) Macro Assembler Version 14.43.34809.0	    03/31/25 14:47:58
 Main.asm						     Symbols 2 - 1
 
 
@@ -1015,7 +1015,7 @@ Segments and Groups:
 FLAT . . . . . . . . . . . . . .	GROUP
 STACK  . . . . . . . . . . . . .	32 Bit	 00001000 Para	  Stack	  'STACK'	 
 _DATA  . . . . . . . . . . . . .	32 Bit	 000001F9 Para	  Public  'DATA'	
-_TEXT  . . . . . . . . . . . . .	32 Bit	 00000563 Para	  Public  'CODE'	
+_TEXT  . . . . . . . . . . . . .	32 Bit	 00000562 Para	  Public  'CODE'	
 
 
 Procedures, parameters, and locals:
@@ -1126,7 +1126,7 @@ WriteStackFrame  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External
 WriteString  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteToFile  . . . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
 WriteWindowsMsg  . . . . . . . .	P Near	 00000000 FLAT	Length= 00000000 External STDCALL
-main . . . . . . . . . . . . . .	P Near	 0000017C _TEXT	Length= 000003E7 Public STDCALL
+main . . . . . . . . . . . . . .	P Near	 0000017C _TEXT	Length= 000003E6 Public STDCALL
   pool_shuffle_loop  . . . . . .	L Near	 00000186 _TEXT	
   pool_shuffle_once  . . . . . .	L Near	 00000191 _TEXT	
   board_init_loop  . . . . . . .	L Near	 000001CA _TEXT	

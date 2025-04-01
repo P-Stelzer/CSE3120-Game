@@ -476,7 +476,7 @@ call Randomize
       .ELSEIF AX == 2960h ; ~
          mRevealBoard
       .ELSE
-         mov AX, 0
+         or ax,ax
       .ENDIF
    .ENDW
 

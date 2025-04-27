@@ -21,8 +21,8 @@ cursorX BYTE 0
 cursorY BYTE 0
 
 ; GRID_ROWS * GRID_COLS MUST BE EVEN AND NOT GREATER THAN 2*POOL_SIZE
-GRID_ROWS EQU 5 ; suggested max 9
-GRID_COLS EQU 8 ; suggested max 16
+GRID_ROWS EQU 9 ; suggested max 9
+GRID_COLS EQU 16 ; suggested max 16
 
 grid Card GRID_ROWS * GRID_COLS DUP(<33,0>)
 gridOriginX BYTE 3

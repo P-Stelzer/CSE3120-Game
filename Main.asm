@@ -4,16 +4,12 @@
 
 
 INCLUDE Irvine32.inc
+INCLUDE board.inc
 
 
 
 .data
-Card STRUCT
-   symbol BYTE ?
-   state BYTE 0 ; 0=hidden, 1=peek, 2=found, 3=wrong
-Card ENDS
 
-CARD_BACK_CHAR EQU 35
 cardRowPadding BYTE 2
 cardColPadding BYTE 4
 
@@ -21,8 +17,8 @@ cursorX BYTE 0
 cursorY BYTE 0
 
 ; GRID_ROWS * GRID_COLS MUST BE EVEN AND NOT GREATER THAN 2*POOL_SIZE
-GRID_ROWS EQU 9 ; suggested max 9
-GRID_COLS EQU 16 ; suggested max 16
+GRID_ROWS EQU 5 ; suggested max 9
+GRID_COLS EQU 8 ; suggested max 16
 
 grid Card GRID_ROWS * GRID_COLS DUP(<33,0>)
 gridOriginX BYTE 3
@@ -358,88 +354,26 @@ ENDM
 ; === MAIN ==========================================================================
 main PROC
 
-call Randomize
+   call Randomize
 
 ; GENERATE RANDOM SYMBOLS IN PAIRS
-   ; SHUFFLE Pool
-   mov ecx, POOL_SHUFFLES
- pool_shuffle_loop:
-   push ecx
+   mShuffle symbolPool, POOL_SIZE, POOL_SHUFFLES
 
-   mov ecx, POOL_SIZE
-   mov ebx, 0
- pool_shuffle_once:
-   mov eax, POOL_SIZE
-   call RandomRange
-   mov dl, symbolPool[ebx]
-   push edx
-   mov dl, symbolPool[eax]
-   mov symbolPool[ebx], dl
-   pop edx
-   mov symbolPool[eax], dl
-   inc ebx
-   loop pool_shuffle_once
-
-   pop ecx
-   loop pool_shuffle_loop
-
-   ; FILL ARRAY
+   ; Copy symbols into first half of the array
+   cld ; direction = forward
    mov ecx, NUM_SYMBOLS
-   mov ebx, 0
-   mov esi, 0
+   mov esi, OFFSET symbolPool ; source
+   mov edi, OFFSET randSymbols ;target
+   rep movsb
 
- board_init_loop:
-   mov al, symbolPool[esi]
-   mov randSymbols[ebx], al
-   inc ebx
-   mov randSymbols[ebx], al
-   inc esi
-   inc ebx
-   loop board_init_loop
+   ; Repeat for second half
+   mov ecx, NUM_SYMBOLS
+   mov esi, OFFSET symbolPool
+   rep movsb
 
-   ; SHUFFLE ARRAY
-   mov ecx, BOARD_SHUFFLES
- board_shuffle_loop:
-   push ecx
+   mShuffle randSymbols, %(NUM_SYMBOLS*2), BOARD_SHUFFLES
 
-   mov ecx, NUM_SYMBOLS*2
-   mov ebx, 0
- board_shuffle_once:
-   mov eax, NUM_SYMBOLS*2
-   call RandomRange
-   mov dl, randSymbols[ebx]
-   push edx
-   mov dl, randSymbols[eax]
-   mov randSymbols[ebx], dl
-   pop edx
-   mov randSymbols[eax], dl
-   inc ebx
-   loop board_shuffle_once
-
-   pop ecx
-   loop board_shuffle_loop
-
-   ; LOAD SYMBOLS INTO CARDS
-   mov ecx, GRID_ROWS
-   mov ebx, 0 ; y
-   mov edi, 0
-
- loop_row:
-   push ecx
-   mov ecx, GRID_COLS
-   mov esi, 0 ; x
-
- loop_col:
-   mov al, randSymbols[edi]
-   mov (Card PTR grid[0 + edi * TYPE grid]).symbol, al
-
-   inc esi
-   inc edi
-   loop loop_col
-
-   inc ebx
-   pop ecx
-   loop loop_row
+   mFillCards grid, GRID_ROWS, GRID_COLS
 
 ; GAME START
 

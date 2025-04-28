@@ -15,6 +15,7 @@ GameProfile STRUCT
    gridCols BYTE 0
    numSymbols BYTE 0
    numCards WORD 0
+   printDelay BYTE 0
 GameProfile ENDS
 
 
@@ -43,9 +44,9 @@ MAX_GRID_ROWS EQU 9
 MAX_GRID_COLS EQU 16
 MAX_NUM_SYMBOLS EQU (MAX_GRID_ROWS * MAX_GRID_COLS) / 2
 
-EASY_MODE GameProfile <0,4,7,14,28>
-NORMAL_MODE GameProfile <1,6,9,27,54>
-HARD_MODE GameProfile <2,9,16,72,144>
+EASY_MODE GameProfile <0,4,7,14,28,35>
+NORMAL_MODE GameProfile <1,6,9,27,54,15>
+HARD_MODE GameProfile <2,9,16,72,144,5>
 
 GAME_RESET GameData <>
 
@@ -218,11 +219,9 @@ DrawInfo PROC USES eax edx
       sub	eax,game.startTime
 
       ; Get and Write Minutes
-	   mov edx, eax
-	   ror edx, 16
-	   and edx, 0000FFFFh
-	   mov bx, 60000
-      div bx
+	   mov edx, 0
+	   mov ebx, 60000
+      div ebx
 	   call	WriteDec
 
 	   mov eax, ":"
@@ -492,17 +491,9 @@ LOCAL loop_start, delay
    mov eax, white
    call SetTextColor
 
-   getProfileField al, id
-
-   .IF al == 0
-      mov delay, 35
-   .ELSEIF al == 1
-      mov delay, 15
-   .ELSEIF al == 2
-      mov delay, 5
-   .ELSE
-      nop
-   .ENDIF
+   mov eax, 0
+   getProfileField al, printDelay
+   mov delay, eax
 
 
    mov edi, 0

@@ -216,14 +216,19 @@ DrawInfo PROC USES eax edx
 
       INVOKE GetTickCount
       sub	eax,game.startTime
+
+      ; Get and Write Minutes
 	   mov edx, eax
 	   ror edx, 16
 	   and edx, 0000FFFFh
 	   mov bx, 60000
       div bx
-	   call	WriteDec			; display it
+	   call	WriteDec
+
 	   mov eax, ":"
 	   call WriteChar
+
+      ; Get and Write Seconds
 	   mov eax, edx
 	   ror edx, 16
 	   and edx, 0000FFFFh
@@ -236,8 +241,11 @@ DrawInfo PROC USES eax edx
 	   	pop eax
 	   .ENDIF
 	   call WriteDec
+
 	   mov eax, "."
 	   call WriteChar
+
+      ; Write Millis
 	   mov eax, edx
 	   call WriteDec
 

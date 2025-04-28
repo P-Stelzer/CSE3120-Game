@@ -20,9 +20,6 @@ ENDM
 
 mPrintMessage MACRO x:REQ, y:REQ, delay:REQ, string:REQ
 LOCAL string, printloop, printexit
-	;;.data
-	;;string BYTE text,0	;; add null terminator
-	;;.code
 	mGotoXY x,y
 
 	push	edx

@@ -216,6 +216,7 @@ DrawInfo PROC USES eax edx
       dec dl
       call Gotoxy
 
+      mov eax,0 
       getProfileField al, numSymbols
       sub al, game.numFound
       call WriteDec

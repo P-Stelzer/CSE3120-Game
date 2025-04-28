@@ -6,9 +6,11 @@ Card ENDS
 
 CARD_BACK_CHAR EQU 35
 
+EXTERNDEF grid:Card, randSymbols:BYTE
+
 FillCards PROTO, 
-   grid:PTR Card,
-   symbols:PTR BYTE,
+   grid:Card,
+   symbols:BYTE,
    num_rows:BYTE,
    num_cols:BYTE
 
@@ -75,12 +77,14 @@ LOCAL loop_row, loop_column
    push eax
 
 ; LOAD SYMBOLS INTO CARDS
-   mov ecx, num_rows
+   mov ecx, 0
+   mov cl, num_rows
    mov edi, 0
 
  loop_row:
    push ecx
-   mov ecx, num_cols
+   mov ecx, 0
+   mov cl, num_cols
 
  loop_col:
    mov al, randSymbols[edi]

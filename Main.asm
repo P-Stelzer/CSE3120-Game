@@ -19,7 +19,7 @@ GameProfile ENDS
 
 
 GameData STRUCT
-   profile DWORD ? ; offset of one of the profiles
+   profile DWORD 0FFFFFFFFh ; offset of one of the profiles
    cursorX BYTE 0
    cursorY BYTE 0
    currentPeek DWORD 0
@@ -229,7 +229,7 @@ DrawInfo ENDP
 ; === mShowWelc =====================================================================
 mShowWelc MACRO text:REQ, x:REQ, y:REQ, delay:=<30>
    mPrintMessage x,y,delay,text
-   mHideCursor
+   ;mHideCursor
    call ReadChar
    .IF AX == 2960h
       jmp game_start
@@ -324,12 +324,47 @@ mHideCursor MACRO
 ENDM
 
 
-mChooseDifficulty MACRO
+mChooseDifficulty MACRO x:REQ, y:REQ
 LOCAL selected
 .data
    selected BYTE 0
+   easyLabel BYTE "Easy",0
+   normalLabel BYTE "Normal",0
+   hardLabel BYTE "Hard",0
 .code
    .WHILE 1
+
+      .IF selected == 0
+         mov eax, lightGreen
+      .ELSE
+         mov eax, white
+      .ENDIF
+      call SetTextColor
+      mov ebx, x
+      mGotoXY bl, y
+      mWriteString easyLabel
+
+      .IF selected == 1
+         mov eax, lightGreen
+      .ELSE
+         mov eax, white
+      .ENDIF
+      call SetTextColor
+      add ebx, LENGTHOF easyLabel
+      add ebx, 2
+      mGotoXY bl, y
+      mWriteString normalLabel
+
+      .IF selected == 2
+         mov eax, lightGreen
+      .ELSE
+         mov eax, white
+      .ENDIF
+      call SetTextColor
+      add ebx, LENGTHOF normalLabel
+      add ebx, 2
+      mGotoXY bl, y
+      mWriteString hardLabel
 
       call ReadChar
       .IF AX == 4D00h && selected < 2; right
@@ -368,8 +403,9 @@ main PROC
    mShowWelc <"If the last two revealed cards match, they remain visible...">, GRID_ORIGIN_X, %(GRID_ORIGIN_Y+10)
    mShowWelc < "Find all matches to win!...">, GRID_ORIGIN_X, %(GRID_ORIGIN_Y+13)
 
-
-
+game_start:
+nop
+   mChooseDifficulty %(GRID_ORIGIN_X+2), 16
 
 
    call Randomize
@@ -379,6 +415,7 @@ main PROC
 
    ; Copy symbols into first half of the array
    cld ; direction = forward
+   mov ecx, 0
    getProfileField cl, numSymbols
    mov esi, OFFSET symbolPool ; source
    mov edi, OFFSET randSymbols ;target
@@ -395,13 +432,13 @@ main PROC
 
    getProfileField dl, gridRows
    getProfileField dh, gridCols
-   INVOKE FillCards, ADDR grid, ADDR randSymbols, dl, dh
+   mFillCards grid, dl, dh
 
 ; GAME START
 
    
 
- game_start:
+
    call Clrscr
 
 ; === MoveRight =====================================================================

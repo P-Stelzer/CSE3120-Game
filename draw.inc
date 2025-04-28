@@ -10,6 +10,13 @@ mGotoXY MACRO x:REQ, y:REQ
 	pop edx
 ENDM
 
+mWriteString MACRO text:REQ
+	push edx
+	mov  edx,OFFSET text
+	call WriteString
+	pop  edx
+ENDM
+
 
 mPrintMessage MACRO x:REQ, y:REQ, delay:REQ, text:REQ
 LOCAL string, printloop, printexit

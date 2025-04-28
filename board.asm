@@ -5,7 +5,7 @@ INCLUDE board.inc
 
 .code
 ; === FillCards ==========================================================================
-FillCards PROC, grid:PTR Card, symbols:PTR BYTE, num_rows:BYTE, num_cols:BYTE
+FillCards PROC, gridp:Card, symbols:BYTE, num_rows:BYTE, num_cols:BYTE
    pushad
 
 ; LOAD SYMBOLS INTO CARDS
@@ -15,12 +15,13 @@ FillCards PROC, grid:PTR Card, symbols:PTR BYTE, num_rows:BYTE, num_cols:BYTE
 
  loop_row:
    push ecx
+   mov ecx, 0
    mov cl, num_cols
 
  loop_col:
    mov al, BYTE PTR symbols[edi]
-   mov (Card PTR grid[0 + edi * TYPE grid]).symbol, al
-   mov (Card PTR grid[0 + edi * TYPE grid]).state, 0
+   mov (Card PTR [gridp + edi * TYPE gridp]).symbol, al
+   mov (Card PTR [gridp + edi * TYPE gridp]).state, 0
 
    inc edi
    loop loop_col

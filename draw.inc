@@ -23,11 +23,13 @@ LOCAL string, printloop, printexit
 	;;.data
 	;;string BYTE text,0	;; add null terminator
 	;;.code
+	mGotoXY x,y
+
 	push	edx
 	push eax
 
 	mov	edx,OFFSET string
-	mGotoXY x,y
+
 
 	printloop:
 	mov  al, [edx]		;; get next char

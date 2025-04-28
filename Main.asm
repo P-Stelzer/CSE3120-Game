@@ -47,6 +47,8 @@ EASY_MODE GameProfile <0,4,7,14,28>
 NORMAL_MODE GameProfile <1,6,9,27,54>
 HARD_MODE GameProfile <2,9,16,72,144>
 
+GAME_RESET GameData <>
+
 GRID_ORIGIN_X EQU 3
 GRID_ORIGIN_Y EQU 1
 
@@ -69,6 +71,8 @@ INFO_STR_1 BYTE "Attempted Matches: ",0
 INFO_STR_2 BYTE "Matches Remaining: ",0
 
 WIN_MESSAGE BYTE "You matched all the cards!",0
+
+PLAY_AGAIN_STR BYTE "Would you like to play again?",0
 
 
 
@@ -451,11 +455,11 @@ LOCAL loop_start, delay
    getProfileField al, id
 
    .IF al == 0
-      mov delay, 40
+      mov delay, 35
    .ELSEIF al == 1
-      mov delay, 25
+      mov delay, 15
    .ELSEIF al == 2
-      mov delay, 10
+      mov delay, 5
    .ELSE
       nop
    .ENDIF
@@ -567,6 +571,7 @@ ENDM
 
       call DrawBoard
       call DrawInfo
+      ;   jmp game_done
       mHideCursor
       call ReadChar
       .IF AX == 4D00h ; right
@@ -591,11 +596,97 @@ ENDM
 
    call DrawInfo
 
-   call ReadChar
+mChoosePlayAgain MACRO x:REQ, y:REQ
+LOCAL selected, yesLabel, noLabel, col, row
+.data
+   selected BYTE 0
+   yesLabel BYTE "Yes",0
+   noLabel BYTE "No",0
+   col BYTE 0
+   row BYTE 0
+.code
+   mov col, x
+   mov row, y
+   
+   .WHILE 1
 
-   call Crlf
+      .IF selected == 0
+         mov eax, lightGreen
+      .ELSE
+         mov eax, white
+      .ENDIF
+      call SetTextColor
+      mov bl, col
+      mov bh, row
+      mGotoXY bl, bh
+      mWriteString yesLabel
+
+      .IF selected == 1
+         mov eax, lightGreen
+      .ELSE
+         mov eax, white
+      .ENDIF
+      call SetTextColor
+      add ebx, LENGTHOF yesLabel
+      add ebx, 2
+      mov bh, row
+      mGotoXY bl, bh
+      mWriteString noLabel
+
+      call ReadChar
+      .IF AX == 4D00h && selected < 1; right
+         inc selected
+      .ELSEIF AX == 4B00h && selected > 0; left
+         dec selected
+      .ELSEIF AX == 3920h ; space
+         .IF selected == 0
+            call Clrscr
+            ; RESET GAME DATA
+            cld ; direction = forward
+            mov ecx, SIZEOF GameData
+            mov esi, OFFSET GAME_RESET ; source
+            mov edi, OFFSET game ;target
+            rep movsb
+            mov eax, skip_intro
+         .ELSEIF selected == 1
+            mov eax, terminate
+         .ELSE
+            nop
+         .ENDIF
+         .BREAK
+      .ELSE
+         nop
+      .ENDIF
+
+   .ENDW
+
+   push eax
+   mov eax, white
+   call SetTextColor
+   pop eax
+   jmp eax
 
 
+ENDM
+
+  game_done:
+
+   mov dl, GRID_ORIGIN_X
+   mov dh, GRID_ORIGIN_Y
+   getProfileField al, gridRows
+   mul ROW_PADDING
+   add al, 6
+   add dh, al
+   add dl, 2 
+
+
+   mPrintMessage GRID_ORIGIN_X, dh,30,PLAY_AGAIN_STR
+
+   inc dh
+   mChoosePlayAgain dl, dh
+
+
+  terminate:
    exit
 main ENDP
 

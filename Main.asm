@@ -36,11 +36,11 @@ getProfileField MACRO dest:REQ, field:REQ
    
 ENDM
 
-.const
-EASY_MODE GameProfile <0,5,8,20,40>
-NORMAL_MODE GameProfile <1,7,10,35,70>
-HARD_MODE GameProfile <2,9,16,72,144>
 
+.const
+EASY_MODE GameProfile <0,4,7,14,28>
+NORMAL_MODE GameProfile <1,6,9,27,54>
+HARD_MODE GameProfile <2,9,16,72,144>
 
 .data
 

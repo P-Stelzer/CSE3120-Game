@@ -6,14 +6,6 @@ Card ENDS
 
 CARD_BACK_CHAR EQU 35
 
-EXTERNDEF grid:Card, randSymbols:BYTE
-
-FillCards PROTO, 
-   grid:Card,
-   symbols:BYTE,
-   num_rows:BYTE,
-   num_cols:BYTE
-
 
 ; === Shuffle ==========================================================================
 mShuffle MACRO string:REQ, length:REQ, numShuffles:REQ

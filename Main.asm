@@ -6,6 +6,7 @@
 INCLUDE Irvine32.inc
 INCLUDE board.inc
 INCLUDE draw.inc
+;INCLUDE queue.inc
 
 
 
@@ -395,7 +396,8 @@ main PROC
 
 game_start:
 nop
-   mChooseDifficulty %(GRID_ORIGIN_X+2), 16
+   mPrintMessage GRID_ORIGIN_X, %(GRID_ORIGIN_Y+16),30,<"Choose Difficulty:">, 
+   mChooseDifficulty %(GRID_ORIGIN_X+2), 18
 
 
    call Randomize
@@ -427,10 +429,77 @@ nop
 
 ; GAME START
 
+   call Clrscr
+
+mBoardFlourish MACRO
+LOCAL numRows, numCols, q, i, loop1, loop2
+.data
+   numRows BYTE 0
+   numCols BYTE 0
+   q QUEUE <>
+   i DWORD 0
+
+.code
+   getProfileField al, gridRows
+   mov numRows, al
+
+   getProfileField al, gridCols
+   mov numRows, al
+
+  loop2:
+   INVOKE Enqueue, q, i
+   mov ecx, 0
+  loop1:
+   INVOKE Dequeue q
+   nop
+   inc eax
+   INVOKE Enqueue, q, eax
+   inc ecx
+   cmp ecx, i
+   jb loop1
+   inc i
+   cmp i, numCols
+   jb loop2
+
+
+
+ENDM
+
+   mov edi, 0
+
+  abcdefg:
+   mov ax, di
+   getProfileField bl, gridCols
+   div bl
+   mov dh, al
+   mov dl, ah
+
+   mov al, dl
+   mul cardColPadding
+   add al, GRID_ORIGIN_X
+   mov dl, al
+
+   mov al, dh
+   mul cardRowPadding
+   add al, GRID_ORIGIN_Y
+   mov dh, al
+
+   call gotoXY
+   mov eax, "#"
+   call WriteChar
+
+   pushad
+   INVOKE Sleep, 40	;; honk shoe
+   popad
+
+   inc edi
+   mov eax, 0
+   getProfileField ax, numCards
+   cmp edi, eax
+   jl abcdefg
    
 
 
-   call Clrscr
 
 ; === MoveRight =====================================================================
 MoveRight MACRO

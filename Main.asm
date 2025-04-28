@@ -25,7 +25,7 @@ GameData STRUCT
    currentPeek DWORD 0
    numFound BYTE 0
    numAttempts DWORD 0
-   startTime DWORD ?
+   startTime DWORD 0
 GameData ENDS
 
 getProfileField MACRO dest:REQ, field:REQ
@@ -70,7 +70,8 @@ DIFF_PROMPT BYTE "Choose Difficulty:",0
 INFO_STR_1 BYTE "Attempted Matches: ",0
 INFO_STR_2 BYTE "Matches Remaining: ",0
 
-WIN_MESSAGE BYTE "You matched all the cards!",0
+WIN_MESSAGE_1 BYTE "You matched all the cards in ",0
+WIN_MESSAGE_2 BYTE " seconds!",0
 
 PLAY_AGAIN_STR BYTE "Would you like to play again?",0
 
@@ -210,8 +211,39 @@ DrawInfo PROC USES eax edx
    getProfileField al, numSymbols
    mov ah, game.numFound
    .IF ah >= al
-      mov EDX, OFFSET WIN_MESSAGE
+      mov EDX, OFFSET WIN_MESSAGE_1
       call WriteString
+
+      INVOKE GetTickCount
+      sub	eax,game.startTime
+	   mov edx, eax
+	   ror edx, 16
+	   and edx, 0000FFFFh
+	   mov bx, 60000
+      div bx
+	   call	WriteDec			; display it
+	   mov eax, ":"
+	   call WriteChar
+	   mov eax, edx
+	   ror edx, 16
+	   and edx, 0000FFFFh
+	   mov bx, 1000
+      div bx
+	   .IF eax < 10
+	   	push eax
+	   	mov eax, "0"
+	   	call WriteChar
+	   	pop eax
+	   .ENDIF
+	   call WriteDec
+	   mov eax, "."
+	   call WriteChar
+	   mov eax, edx
+	   call WriteDec
+
+      ;mov EDX, OFFSET WIN_MESSAGE_2
+      ;call WriteString
+
    .ELSE
       push edx
       mov EDX, OFFSET INFO_STR_2
@@ -574,6 +606,14 @@ ENDM
       ;   jmp game_done
       mHideCursor
       call ReadChar
+      push eax
+      
+      mov eax, game.startTime
+      .IF eax == 0
+         INVOKE GetTickCount
+         mov	game.startTime,eax   
+      .ENDIF
+      pop eax
       .IF AX == 4D00h ; right
          MoveRight
       .ELSEIF AX == 4800h ; up
@@ -592,6 +632,7 @@ ENDM
       .ENDIF
    .ENDW
 
+  game_done:
    call DrawBoard
 
    call DrawInfo
@@ -668,8 +709,6 @@ LOCAL selected, yesLabel, noLabel, col, row
 
 
 ENDM
-
-  game_done:
 
    mov dl, GRID_ORIGIN_X
    mov dh, GRID_ORIGIN_Y

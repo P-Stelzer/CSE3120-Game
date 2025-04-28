@@ -10,7 +10,7 @@ INCLUDE draw.inc
 
 
 GameProfile STRUCT
-   id DWORD 0
+   id BYTE 0
    gridRows BYTE 0
    gridCols BYTE 0
    numSymbols BYTE 0
@@ -37,9 +37,9 @@ getProfileField MACRO dest:REQ, field:REQ
 ENDM
 
 .const
-EASY_MODE GameProfile <0,5,8,40,80>
-NORMAL_MODE GameProfile <1,7,10,70,140>
-HARD_MODE GameProfile <2,9,16,144,288>
+EASY_MODE GameProfile <0,5,8,20,40>
+NORMAL_MODE GameProfile <1,7,10,35,70>
+HARD_MODE GameProfile <2,9,16,72,144>
 
 
 .data
@@ -252,8 +252,8 @@ mPeekCard MACRO
    .IF dl == 0
       mov (Card PTR [ebx]).state, 1
    
-      getProfileField bl, gridRows
-      .IF bl == 0
+      mov edx, game.currentPeek
+      .IF edx == 0
          mov game.currentPeek, ebx
       .ELSE
          inc game.numAttempts
@@ -280,30 +280,19 @@ ENDM
 
 ; === mRevealBoard ==================================================================
 mRevealBoard MACRO
-LOCAL loop_row, loop_col
+LOCAL loop_start
    mov ecx, 0
-   mov cl, (GameProfile PTR game.profile).gridRows
-   mov ebx, 0 ; y
+   getProfileField cx, numCards
    mov edi, 0
  
- loop_row:
-   push ecx
-   mov cl, (GameProfile PTR game.profile).gridCols
-   mov esi, 0 ; x
- 
- loop_col:
+ loop_start:
    mov al, (Card PTR grid[0 + edi * TYPE grid]).state
    .IF al == 0
       mov (Card PTR grid[0 + edi * TYPE grid]).state, 3
    .ENDIF
  
-   inc esi
    inc edi
-   loop loop_col
- 
-   inc ebx
-   pop ecx
-   loop loop_row
+   loop loop_start
 
 ENDM
 
@@ -426,9 +415,10 @@ nop
    mov esi, OFFSET symbolPool
    rep movsb
 
-   mov eax, 0
-   getProfileField ax, numCards
-   mShuffle randSymbols, eax, BOARD_SHUFFLES
+   mov esi, 0
+   getProfileField si, numCards
+   mShuffle randSymbols, esi, BOARD_SHUFFLES
+
 
    getProfileField dl, gridRows
    getProfileField dh, gridCols
@@ -520,6 +510,7 @@ ENDM
       .ELSEIF AX == 4B00h ; left
          MoveLeft
       .ELSEIF AX == 3920h ; space
+      nop
          mPeekCard
       .ELSEIF AX == 2960h ; ~
          mRevealBoard

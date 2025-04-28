@@ -38,34 +38,38 @@ mShuffleOnce MACRO string:REQ, length:REQ
 LOCAL loop_start
    push ebx
    push eax
-   push edx
 
    mov ebx, 0
  loop_start:
    mov eax, length
    call RandomRange
 
-   ;; save first char in temp
-   mov dl, string[ebx]
-   push edx
-
-   ;; place second char in first char
-   mov dl, string[eax]
-   mov string[ebx], dl
-
-   ;; replace first char in second char
-   pop edx
-   mov string[eax], dl
-
+   mSwap string, eax, ebx
 
    inc ebx
    cmp ebx, length
    jb loop_start
 
-   pop edx
    pop eax
    pop ebx
 
+ENDM
+
+
+mSwap MACRO string:REQ, loc1:REQ, loc2:REQ
+   push edx
+   ;; save first char in temp
+   mov dl, string[loc1]
+   push edx
+
+   ;; place second char in first char
+   mov dl, string[loc2]
+   mov string[loc1], dl
+
+   ;; replace first char in second char
+   pop edx
+   mov string[loc2], dl
+   pop edx
 ENDM
 
 

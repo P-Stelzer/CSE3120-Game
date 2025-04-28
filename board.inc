@@ -6,8 +6,14 @@ Card ENDS
 
 CARD_BACK_CHAR EQU 35
 
+FillCards PROTO, 
+   grid:PTR Card,
+   symbols:PTR BYTE,
+   num_rows:BYTE,
+   num_cols:BYTE
 
 
+; === Shuffle ==========================================================================
 mShuffle MACRO string:REQ, length:REQ, numShuffles:REQ
 LOCAL loop_start
    push ecx
@@ -25,6 +31,7 @@ LOCAL loop_start
 ENDM
 
 
+; === ShuffleOnce ==========================================================================
 mShuffleOnce MACRO string:REQ, length:REQ
 LOCAL loop_start
    push ebx
@@ -60,6 +67,7 @@ LOCAL loop_start
 ENDM
 
 
+; === FillCards ==========================================================================
 mFillCards MACRO grid:REQ, num_rows:REQ, num_cols:REQ
 LOCAL loop_row, loop_column
    push ecx
@@ -77,6 +85,7 @@ LOCAL loop_row, loop_column
  loop_col:
    mov al, randSymbols[edi]
    mov (Card PTR grid[0 + edi * TYPE grid]).symbol, al
+   mov (Card PTR grid[0 + edi * TYPE grid]).state, 0
 
    inc edi
    loop loop_col

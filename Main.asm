@@ -5,44 +5,67 @@
 
 INCLUDE Irvine32.inc
 INCLUDE board.inc
+INCLUDE draw.inc
 
+
+
+GameProfile STRUCT
+   id DWORD 0
+   gridRows BYTE 0
+   gridCols BYTE 0
+   numSymbols BYTE 0
+   numCards WORD 0
+GameProfile ENDS
+
+
+GameData STRUCT
+   profile DWORD ? ; offset of one of the profiles
+   cursorX BYTE 0
+   cursorY BYTE 0
+   currentPeek DWORD 0
+   numFound BYTE 0
+   numAttempts DWORD 0
+   startTime DWORD ?
+GameData ENDS
+
+getProfileField MACRO dest:REQ, field:REQ
+   push edi
+   mov edi, game.profile
+   mov dest, (GameProfile PTR [edi]).field
+   pop edi
+   
+ENDM
+
+.const
+EASY_MODE GameProfile <0,5,8,40,80>
+NORMAL_MODE GameProfile <1,7,10,70,140>
+HARD_MODE GameProfile <2,9,16,144,288>
 
 
 .data
 
+game GameData <>
+
 cardRowPadding BYTE 2
 cardColPadding BYTE 4
 
-cursorX BYTE 0
-cursorY BYTE 0
 
 ; GRID_ROWS * GRID_COLS MUST BE EVEN AND NOT GREATER THAN 2*POOL_SIZE
-GRID_ROWS EQU 5 ; suggested max 9
-GRID_COLS EQU 8 ; suggested max 16
+MAX_GRID_ROWS EQU 9
+MAX_GRID_COLS EQU 16
+MAX_NUM_SYMBOLS EQU (MAX_GRID_ROWS * MAX_GRID_COLS) / 2
 
-grid Card GRID_ROWS * GRID_COLS DUP(<33,0>)
-gridOriginX BYTE 3
-gridOriginY BYTE 1
 
-NUM_SYMBOLS EQU (GRID_ROWS * GRID_COLS) / 2
-randSymbols BYTE NUM_SYMBOLS*2 DUP(?)
+grid Card MAX_GRID_ROWS * MAX_GRID_COLS DUP(<33,-1>)
+GRID_ORIGIN_X EQU 3
+GRID_ORIGIN_Y EQU 1
+
+
+randSymbols BYTE MAX_NUM_SYMBOLS*2 DUP(0)
 
 POOL_SHUFFLES EQU 3
 BOARD_SHUFFLES EQU 3
 
-
-peek1 DWORD 0
-
-numFound BYTE 0
-numAttempts DWORD 0
-
-
-welcomeMessage1 BYTE "Welcome to Memory Matching!...",0
-welcomeMessage2 BYTE "Select cards with the arrow keys...",0
-welcomeMessage3 BYTE "Reveal the selected card with space...",0
-welcomeMessage4 BYTE "Each card has exactly one match...",0
-welcomeMessage5 BYTE "If the last two revealed cards match, they remain visible...",0
-welcomeMessage6 BYTE "Find all matches to win!...",0
 
 infoStr1 BYTE "Attempted Matches: ",0
 infoStr2 BYTE "Matches Remaining: ",0
@@ -60,68 +83,16 @@ symbolPool BYTE "ABCDEFGHIJKLM"
 
 
 .code
-
-; === MoveRight =====================================================================
-MoveRight MACRO
-
- mov dl, cursorX
- inc dl
-
- .IF dl >= 0 && dl < GRID_COLS
-    mov cursorX, dl
- .ENDIF
-
-ENDM
-
-; === MoveLeft ======================================================================
-MoveLeft MACRO
-
- mov dl, cursorX
- dec dl
-
- .IF dl >= 0 && dl < GRID_COLS
-    mov cursorX, dl
- .ENDIF
-
-ENDM
-
-
-; === MoveUp ========================================================================
-MoveUp MACRO
-
- mov dh, cursorY
- dec dh
-
- .IF dh >= 0 && dh < GRID_ROWS
-    mov cursorY, dh
- .ENDIF
-
-ENDM
-
-
-; === MoveDown ======================================================================
-MoveDown MACRO
-
- mov dh, cursorY
- inc dh
-
- .IF dh >= 0 && dh < GRID_ROWS
-    mov cursorY, dh
- .ENDIF
-
-ENDM
-
-
 ; === DrawBoard =====================================================================
 DrawBoard PROC USES ecx ebx edi eax esi
 
-   mov ecx, GRID_ROWS
+   getProfileField cl, gridRows
    mov ebx, 0 ; y
    mov edi, 0
 
  draw_row:
    push ecx
-   mov ecx, GRID_COLS
+   getProfileField cl, gridCols
    mov esi, 0 ; x
 
  draw_col:
@@ -132,7 +103,7 @@ DrawBoard PROC USES ecx ebx edi eax esi
       mov eax, red
    .ELSEIF ah == 1
       mov eax, cyan
-   .ELSEIF al == cursorX && bl == cursorY
+   .ELSEIF al == game.cursorX && bl == game.cursorY
       .IF ah == 2
          mov eax, lightGray
       .ELSE
@@ -164,13 +135,13 @@ DrawBoard PROC USES ecx ebx edi eax esi
    mov edx, esi ; set dl == x
    mov al, dl
    mul cardColPadding
-   add al, gridOriginX
+   add al, GRID_ORIGIN_X
    mov dl, al
 
    mov dh, bl   ; set dh == y
    mov al, dh
    mul cardRowPadding
-   add al, gridOriginY
+   add al, GRID_ORIGIN_Y
    mov dh, al
 
    pop eax
@@ -199,9 +170,9 @@ DrawInfo PROC USES eax edx
    call SetTextColor
 
    ; Number Attempts
-   mov dl, gridOriginX
-   mov dh, gridOriginY
-   mov al, GRID_ROWS
+   mov dl, GRID_ORIGIN_X
+   mov dh, GRID_ORIGIN_Y
+   getProfileField al, gridRows
    mul cardRowPadding
    add al, 2
    add dh, al
@@ -214,7 +185,7 @@ DrawInfo PROC USES eax edx
 
    call WriteString
 
-   mov eax, numAttempts
+   mov eax, game.numAttempts
 
    call WriteDec
 
@@ -225,7 +196,9 @@ DrawInfo PROC USES eax edx
 
    call Gotoxy
    
-   .IF numFound >= NUM_SYMBOLS
+   getProfileField al, numSymbols
+   mov ah, game.numFound
+   .IF ah >= al
       mov EDX, OFFSET winMessage
       call WriteString
    .ELSE
@@ -243,8 +216,8 @@ DrawInfo PROC USES eax edx
       dec dl
       call Gotoxy
 
-      mov eax, NUM_SYMBOLS
-      sub al, numFound
+      getProfileField al, numSymbols
+      sub al, game.numFound
       call WriteDec
    .ENDIF
 
@@ -254,17 +227,12 @@ DrawInfo ENDP
 
 
 ; === mShowWelc =====================================================================
-mShowWelc MACRO message
-   call Gotoxy
-   push edx
-   mov edx, OFFSET message
-   call WriteString
-   pop edx
+mShowWelc MACRO text:REQ, x:REQ, y:REQ, delay:=<30>
+   mPrintMessage x,y,delay,text
    mHideCursor
    call ReadChar
-   call Clrscr
    .IF AX == 2960h
-      jmp game_loop
+      jmp game_start
    .ENDIF
 ENDM
 
@@ -273,10 +241,10 @@ ENDM
 mPeekCard MACRO
    ; GET CARD INDEX UNDER CURSOR
    mov eax, 0
-   mov al, cursorY
-   mov bl, GRID_COLS
+   mov al, game.cursorY
+   getProfileField bl, gridCols
    mul bl
-   add al, cursorX
+   add al, game.cursorX
    
    ; LOAD CARD AND CHECK STATE
    lea ebx, grid[0 + eax * TYPE grid]
@@ -284,23 +252,24 @@ mPeekCard MACRO
    .IF dl == 0
       mov (Card PTR [ebx]).state, 1
    
-      .IF peek1 == 0
-         mov peek1, ebx
+      getProfileField bl, gridRows
+      .IF bl == 0
+         mov game.currentPeek, ebx
       .ELSE
-         inc numAttempts
-         mov eax, peek1
+         inc game.numAttempts
+         mov eax, game.currentPeek
          mov dh, (Card PTR [ebx]).symbol
          mov dl, (Card PTR [eax]).symbol
    
          .IF dh == dl
             mov (Card PTR [ebx]).state, 2
             mov (Card PTR [eax]).state, 2
-            inc numFound
+            inc game.numFound
          .ELSE
             mov (Card PTR [ebx]).state, 3
             mov (Card PTR [eax]).state, 3
          .ENDIF
-         mov peek1, 0
+         mov game.currentPeek, 0
       .ENDIF
    
    
@@ -311,16 +280,18 @@ ENDM
 
 ; === mRevealBoard ==================================================================
 mRevealBoard MACRO
-   mov ecx, GRID_ROWS
+LOCAL loop_row, loop_col
+   mov ecx, 0
+   mov cl, (GameProfile PTR game.profile).gridRows
    mov ebx, 0 ; y
    mov edi, 0
  
- loop_row_1:
+ loop_row:
    push ecx
-   mov ecx, GRID_COLS
+   mov cl, (GameProfile PTR game.profile).gridCols
    mov esi, 0 ; x
  
- loop_col_1:
+ loop_col:
    mov al, (Card PTR grid[0 + edi * TYPE grid]).state
    .IF al == 0
       mov (Card PTR grid[0 + edi * TYPE grid]).state, 3
@@ -328,17 +299,18 @@ mRevealBoard MACRO
  
    inc esi
    inc edi
-   loop loop_col_1
+   loop loop_col
  
    inc ebx
    pop ecx
-   loop loop_row_1
+   loop loop_row
 
 ENDM
 
 
 ; === mHideCursor ===================================================================
 mHideCursor MACRO
+
    push edx
    push eax
    call GetMaxXY
@@ -348,11 +320,57 @@ mHideCursor MACRO
    call GotoXY
    pop eax
    pop edx
+
 ENDM
 
 
+mChooseDifficulty MACRO
+LOCAL selected
+.data
+   selected BYTE 0
+.code
+   .WHILE 1
+
+      call ReadChar
+      .IF AX == 4D00h && selected < 2; right
+         inc selected
+      .ELSEIF AX == 4B00h && selected > 0; left
+         dec selected
+      .ELSEIF AX == 3920h ; space
+         .IF selected == 0
+            mov eax, OFFSET EASY_MODE 
+         .ELSEIF selected == 1
+            mov eax, OFFSET NORMAL_MODE 
+         .ELSEIF selected == 2
+            mov eax, OFFSET HARD_MODE 
+         .ELSE
+            nop
+         .ENDIF
+
+         mov game.profile, eax
+         .BREAK
+      .ELSE
+         nop
+      .ENDIF
+
+   .ENDW
+
+
+ENDM
+
 ; === MAIN ==========================================================================
 main PROC
+
+   mShowWelc <"Welcome to Memory Matching!...">, GRID_ORIGIN_X, GRID_ORIGIN_Y
+   mShowWelc <"Select cards with the arrow keys...">, GRID_ORIGIN_X, %(GRID_ORIGIN_Y+3)
+   mShowWelc <"Reveal the selected card with the space bar...">, GRID_ORIGIN_X, %(GRID_ORIGIN_Y+5)
+   mShowWelc <"Each card has exactly one match...">, GRID_ORIGIN_X, %(GRID_ORIGIN_Y+8)
+   mShowWelc <"If the last two revealed cards match, they remain visible...">, GRID_ORIGIN_X, %(GRID_ORIGIN_Y+10)
+   mShowWelc < "Find all matches to win!...">, GRID_ORIGIN_X, %(GRID_ORIGIN_Y+13)
+
+
+
+
 
    call Randomize
 
@@ -361,38 +379,97 @@ main PROC
 
    ; Copy symbols into first half of the array
    cld ; direction = forward
-   mov ecx, NUM_SYMBOLS
+   getProfileField cl, numSymbols
    mov esi, OFFSET symbolPool ; source
    mov edi, OFFSET randSymbols ;target
    rep movsb
 
    ; Repeat for second half
-   mov ecx, NUM_SYMBOLS
+   getProfileField cl, numSymbols
    mov esi, OFFSET symbolPool
    rep movsb
 
-   mShuffle randSymbols, %(NUM_SYMBOLS*2), BOARD_SHUFFLES
+   mov eax, 0
+   getProfileField ax, numCards
+   mShuffle randSymbols, eax, BOARD_SHUFFLES
 
-   mFillCards grid, GRID_ROWS, GRID_COLS
+   getProfileField dl, gridRows
+   getProfileField dh, gridCols
+   INVOKE FillCards, ADDR grid, ADDR randSymbols, dl, dh
 
 ; GAME START
 
-   mov dl, gridOriginX
-   mov dh, gridOriginY
+   
 
-   mShowWelc welcomeMessage1
-   mShowWelc welcomeMessage2
-   mShowWelc welcomeMessage3
-   mShowWelc welcomeMessage4
-   mShowWelc welcomeMessage5
-   mShowWelc welcomeMessage6
+ game_start:
+   call Clrscr
 
+; === MoveRight =====================================================================
+MoveRight MACRO
+
+ mov dl, game.cursorX
+ inc dl
+
+ getProfileField al, gridCols
+ .IF dl >= 0 && dl < al
+    mov game.cursorX, dl
+ .ENDIF
+
+ENDM
+
+; === MoveLeft ======================================================================
+MoveLeft MACRO
+
+ mov dl, game.cursorX
+ dec dl
+
+ getProfileField al, gridCols
+ .IF dl >= 0 && dl < al
+    mov game.cursorX, dl
+ .ENDIF
+
+ENDM
+
+
+; === MoveUp ========================================================================
+MoveUp MACRO
+
+ mov dh, game.cursorY
+ dec dh
+
+ getProfileField al, gridRows
+ .IF dh >= 0 && dh < al
+    mov game.cursorY, dh
+ .ENDIF
+
+ENDM
+
+
+; === MoveDown ======================================================================
+MoveDown MACRO
+
+ mov dh, game.cursorY
+ inc dh
+
+ getProfileField al, gridRows
+ .IF dh >= 0 && dh < al
+    mov game.cursorY, dh
+ .ENDIF
+
+ENDM
 
 
  game_loop:
 ; GAME LOOP
    mov ebx, TYPE WORD
-   .WHILE numFound < NUM_SYMBOLS
+
+   .WHILE 1 ;game.numFound < (GameProfile PTR game.profile).numSymbols
+      getProfileField al, numSymbols
+      
+      .IF al <= game.numFound
+         .BREAK
+      .ENDIF
+
       call DrawBoard
       call DrawInfo
       mHideCursor
@@ -410,7 +487,7 @@ main PROC
       .ELSEIF AX == 2960h ; ~
          mRevealBoard
       .ELSE
-         or ax,ax
+         nop
       .ENDIF
    .ENDW
 

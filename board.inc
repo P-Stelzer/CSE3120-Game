@@ -66,7 +66,7 @@ ENDM
 
 
 ; === FillCards ==========================================================================
-mFillCards MACRO grid:REQ, num_rows:REQ, num_cols:REQ
+mFillCards MACRO grid:REQ, randSymbols:REQ, num_rows:REQ, num_cols:REQ
 LOCAL loop_row, loop_column
    push ecx
    push edi

@@ -18,11 +18,11 @@ mWriteString MACRO text:REQ
 ENDM
 
 
-mPrintMessage MACRO x:REQ, y:REQ, delay:REQ, text:REQ
+mPrintMessage MACRO x:REQ, y:REQ, delay:REQ, string:REQ
 LOCAL string, printloop, printexit
-	.data
-	string BYTE text,0	;; add null terminator
-	.code
+	;;.data
+	;;string BYTE text,0	;; add null terminator
+	;;.code
 	push	edx
 	push eax
 
@@ -46,3 +46,21 @@ LOCAL string, printloop, printexit
 	pop eax
 	pop	edx
 ENDM
+
+
+; === mHideCursor ===================================================================
+mHideCursor MACRO
+
+   push edx
+   push eax
+   call GetMaxXY
+   mov dh, al
+   dec dh
+   dec dl
+   call GotoXY
+   pop eax
+   pop edx
+
+ENDM
+
+

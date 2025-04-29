@@ -37,6 +37,57 @@ getProfileField MACRO dest:REQ, field:REQ
 ENDM
 
 
+; === mLoadBoard =====================================================================
+mLoadBoard MACRO
+LOCAL loop_start, delay
+.data
+   delay DWORD ?
+.code
+   ; CREATE BOARD OF WHITE "#"s
+   mov eax, white
+   call SetTextColor
+
+   mov eax, 0
+   getProfileField al, printDelay
+   mov delay, eax
+
+
+   mov edi, 0
+
+  loop_start:
+   mov ax, di
+   getProfileField bl, gridCols
+   div bl
+   mov dh, al
+   mov dl, ah
+
+   mov al, dl
+   mul COL_PADDING
+   add al, GRID_ORIGIN_X
+   mov dl, al
+
+   mov al, dh
+   mul ROW_PADDING
+   add al, GRID_ORIGIN_Y
+   mov dh, al
+
+   call gotoXY
+   mov eax, "#"
+   call WriteChar
+
+   pushad
+   INVOKE Sleep, delay	; delay between chars appearing
+   popad
+
+   inc edi
+   mov eax, 0
+   getProfileField ax, numCards
+   cmp edi, eax
+   jl loop_start
+   
+ENDM
+
+
 ; === mPeekCard =====================================================================
 mPeekCard MACRO
    ; GET CARD INDEX UNDER CURSOR
@@ -97,8 +148,6 @@ LOCAL loop_start
 ENDM
 
 
-
-
 ; === mChooseDifficulty ==============================================================
 mChooseDifficulty MACRO x:REQ, y:REQ
 LOCAL selected
@@ -142,6 +191,8 @@ LOCAL selected
       mGotoXY bl, y
       mWriteString hardLabel
 
+      mHideCursor
+
       call ReadChar
       .IF AX == 4D00h && selected < 2; right
          inc selected
@@ -166,123 +217,6 @@ LOCAL selected
 
    .ENDW
 
-
-ENDM
-
-
-; === mShowWelc =====================================================================
-mShowWelc MACRO text:REQ, x:REQ, y:REQ, delay:=<30>
-   mPrintMessage x,y,delay,text
-   mHideCursor
-   call ReadChar
-   .IF AX == 2960h
-      jmp skip_intro
-   .ENDIF
-ENDM
-
-
-; === mLoadBoard =====================================================================
-mLoadBoard MACRO
-LOCAL loop_start, delay
-.data
-   delay DWORD ?
-.code
-   ; CREATE BOARD OF WHITE "#"s
-   mov eax, white
-   call SetTextColor
-
-   mov eax, 0
-   getProfileField al, printDelay
-   mov delay, eax
-
-
-   mov edi, 0
-
-  loop_start:
-   mov ax, di
-   getProfileField bl, gridCols
-   div bl
-   mov dh, al
-   mov dl, ah
-
-   mov al, dl
-   mul COL_PADDING
-   add al, GRID_ORIGIN_X
-   mov dl, al
-
-   mov al, dh
-   mul ROW_PADDING
-   add al, GRID_ORIGIN_Y
-   mov dh, al
-
-   call gotoXY
-   mov eax, "#"
-   call WriteChar
-
-   pushad
-   INVOKE Sleep, delay	; delay between chars appearing
-   popad
-
-   inc edi
-   mov eax, 0
-   getProfileField ax, numCards
-   cmp edi, eax
-   jl loop_start
-   
-ENDM
-
-
-; === MoveRight =====================================================================
-MoveRight MACRO
-
- mov dl, game.cursorX
- inc dl
-
- getProfileField al, gridCols
- .IF dl >= 0 && dl < al
-    mov game.cursorX, dl
- .ENDIF
-
-ENDM
-
-; === MoveLeft ======================================================================
-MoveLeft MACRO
-
- mov dl, game.cursorX
- dec dl
-
- getProfileField al, gridCols
- .IF dl >= 0 && dl < al
-    mov game.cursorX, dl
- .ENDIF
-
-ENDM
-
-
-; === MoveUp ========================================================================
-MoveUp MACRO
-
- mov dh, game.cursorY
- dec dh
-
- getProfileField al, gridRows
- .IF dh >= 0 && dh < al
-    mov game.cursorY, dh
- .ENDIF
-
-ENDM
-
-
-; === MoveDown ======================================================================
-MoveDown MACRO
-
- mov dh, game.cursorY
- inc dh
-
- getProfileField al, gridRows
- .IF dh >= 0 && dh < al
-    mov game.cursorY, dh
- .ENDIF
 
 ENDM
 
@@ -324,6 +258,9 @@ LOCAL selected, yesLabel, noLabel, col, row
       mov bh, row
       mGotoXY bl, bh
       mWriteString noLabel
+
+      mHideCursor
+
       ; yes/no selected
       call ReadChar
       .IF AX == 4D00h && selected < 1; right
@@ -357,7 +294,6 @@ LOCAL selected, yesLabel, noLabel, col, row
    call SetTextColor
    pop eax
    jmp eax
-
 
 ENDM
 
@@ -459,7 +395,6 @@ LOCAL loop_row, loop_column
 ENDM
 
 
-
 ; === mGotoXY ===================================================================
 mGotoXY MACRO x:REQ, y:REQ
 	push edx	
@@ -511,6 +446,17 @@ LOCAL string, printloop, printexit
 ENDM
 
 
+; === mShowWelc =====================================================================
+mShowWelc MACRO text:REQ, x:REQ, y:REQ, delay:=<30>
+   mPrintMessage x,y,delay,text
+   mHideCursor
+   call ReadChar
+   .IF AX == 2960h
+      jmp skip_intro
+   .ENDIF
+ENDM
+
+
 ; === mHideCursor ===================================================================
 mHideCursor MACRO
 
@@ -524,4 +470,58 @@ mHideCursor MACRO
    pop eax
    pop edx
 						; move to bottom off screen
+ENDM
+
+; === MoveRight =====================================================================
+MoveRight MACRO
+
+ mov dl, game.cursorX
+ inc dl
+
+ getProfileField al, gridCols
+ .IF dl >= 0 && dl < al
+    mov game.cursorX, dl
+ .ENDIF
+
+ENDM
+
+; === MoveLeft ======================================================================
+MoveLeft MACRO
+
+ mov dl, game.cursorX
+ dec dl
+
+ getProfileField al, gridCols
+ .IF dl >= 0 && dl < al
+    mov game.cursorX, dl
+ .ENDIF
+
+ENDM
+
+
+; === MoveUp ========================================================================
+MoveUp MACRO
+
+ mov dh, game.cursorY
+ dec dh
+
+ getProfileField al, gridRows
+ .IF dh >= 0 && dh < al
+    mov game.cursorY, dh
+ .ENDIF
+
+ENDM
+
+
+; === MoveDown ======================================================================
+MoveDown MACRO
+
+ mov dh, game.cursorY
+ inc dh
+
+ getProfileField al, gridRows
+ .IF dh >= 0 && dh < al
+    mov game.cursorY, dh
+ .ENDIF
+
 ENDM

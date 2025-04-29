@@ -3,42 +3,14 @@
 ;    Kyle Gibson
 
 
-INCLUDE Irvine32.inc
-INCLUDE board.inc
-INCLUDE draw.inc
 
+INCLUDE main.inc
 
-
-GameProfile STRUCT
-   id BYTE 0
-   gridRows BYTE 0
-   gridCols BYTE 0
-   numSymbols BYTE 0
-   numCards WORD 0
-   printDelay BYTE 0
-GameProfile ENDS
-
-
-GameData STRUCT
-   profile DWORD 0FFFFFFFFh ; offset of one of the profiles
-   cursorX BYTE 0
-   cursorY BYTE 0
-   currentPeek DWORD 0
-   numFound BYTE 0
-   numAttempts DWORD 0
-   startTime DWORD 0
-GameData ENDS
-
-getProfileField MACRO dest:REQ, field:REQ
-   push edi
-   mov edi, game.profile
-   mov dest, (GameProfile PTR [edi]).field
-   pop edi
-   
-ENDM
 
 
 .const
+CARD_BACK_CHAR EQU 35
+
 ; GRID_ROWS * GRID_COLS MUST BE EVEN AND NOT GREATER THAN 2*POOL_SIZE
 MAX_GRID_ROWS EQU 9
 MAX_GRID_COLS EQU 16
@@ -71,8 +43,7 @@ DIFF_PROMPT BYTE "Choose Difficulty:",0
 INFO_STR_1 BYTE "Attempted Matches: ",0
 INFO_STR_2 BYTE "Matches Remaining: ",0
 
-WIN_MESSAGE_1 BYTE "You matched all the cards in ",0
-WIN_MESSAGE_2 BYTE " seconds!",0
+WIN_MESSAGE BYTE "You matched all the cards in ",0
 
 PLAY_AGAIN_STR BYTE "Would you like to play again?",0
 
@@ -212,7 +183,7 @@ DrawInfo PROC USES eax edx
    getProfileField al, numSymbols
    mov ah, game.numFound
    .IF ah >= al
-      mov EDX, OFFSET WIN_MESSAGE_1
+      mov EDX, OFFSET WIN_MESSAGE
       call WriteString
 
       INVOKE GetTickCount
@@ -248,8 +219,6 @@ DrawInfo PROC USES eax edx
 	   mov eax, edx
 	   call WriteDec
 
-      ;mov EDX, OFFSET WIN_MESSAGE_2
-      ;call WriteString
 
    .ELSE
       push edx
@@ -277,151 +246,9 @@ DrawInfo PROC USES eax edx
 DrawInfo ENDP
 
 
-
-; === mPeekCard =====================================================================
-mPeekCard MACRO
-   ; GET CARD INDEX UNDER CURSOR
-   mov eax, 0
-   mov al, game.cursorY
-   getProfileField bl, gridCols
-   mul bl
-   add al, game.cursorX
-   
-   ; LOAD CARD AND CHECK STATE
-   lea ebx, grid[0 + eax * TYPE grid]
-   mov dl, (Card PTR [ebx]).state
-   .IF dl == 0
-      mov (Card PTR [ebx]).state, 1
-   
-      mov edx, game.currentPeek
-      .IF edx == 0
-         mov game.currentPeek, ebx
-      .ELSE
-         inc game.numAttempts
-         mov eax, game.currentPeek
-         mov dh, (Card PTR [ebx]).symbol
-         mov dl, (Card PTR [eax]).symbol
-   
-         .IF dh == dl
-            mov (Card PTR [ebx]).state, 2
-            mov (Card PTR [eax]).state, 2
-            inc game.numFound
-         .ELSE
-            mov (Card PTR [ebx]).state, 3
-            mov (Card PTR [eax]).state, 3
-         .ENDIF
-         mov game.currentPeek, 0
-      .ENDIF
-   
-   
-   .ENDIF
-   
-ENDM
-
-
-; === mRevealBoard ==================================================================
-mRevealBoard MACRO
-LOCAL loop_start
-   mov ecx, 0
-   getProfileField cx, numCards
-   mov edi, 0
- 
- loop_start:
-   mov al, (Card PTR grid[0 + edi * TYPE grid]).state
-   .IF al == 0
-      mov (Card PTR grid[0 + edi * TYPE grid]).state, 3
-   .ENDIF
- 
-   inc edi
-   loop loop_start
-
-ENDM
-
-
-
-
-; === mChooseDifficulty ==============================================================
-mChooseDifficulty MACRO x:REQ, y:REQ
-LOCAL selected
-.data
-   selected BYTE 0
-   easyLabel BYTE "Easy",0
-   normalLabel BYTE "Normal",0
-   hardLabel BYTE "Hard",0
-.code
-   .WHILE 1
-      ; color of highlighted text
-      .IF selected == 0
-         mov eax, lightGreen
-      .ELSE
-         mov eax, white
-      .ENDIF
-      call SetTextColor
-      mov ebx, x
-      mGotoXY bl, y
-      mWriteString easyLabel
-
-      .IF selected == 1
-         mov eax, lightGreen
-      .ELSE
-         mov eax, white
-      .ENDIF
-      call SetTextColor
-      add ebx, LENGTHOF easyLabel
-      add ebx, 2
-      mGotoXY bl, y
-      mWriteString normalLabel
-
-      .IF selected == 2
-         mov eax, lightGreen
-      .ELSE
-         mov eax, white
-      .ENDIF
-      call SetTextColor
-      add ebx, LENGTHOF normalLabel
-      add ebx, 2
-      mGotoXY bl, y
-      mWriteString hardLabel
-
-      call ReadChar
-      .IF AX == 4D00h && selected < 2; right
-         inc selected
-      .ELSEIF AX == 4B00h && selected > 0; left
-         dec selected
-      .ELSEIF AX == 3920h ; space
-         .IF selected == 0
-            mov eax, OFFSET EASY_MODE 
-         .ELSEIF selected == 1
-            mov eax, OFFSET NORMAL_MODE 
-         .ELSEIF selected == 2
-            mov eax, OFFSET HARD_MODE 
-         .ELSE
-            nop
-         .ENDIF
-
-         mov game.profile, eax
-         .BREAK
-      .ELSE
-         nop
-      .ENDIF
-
-   .ENDW
-
-
-ENDM
-
 ; === MAIN ==========================================================================
 main PROC
 
-; === mShowWelc =====================================================================
-mShowWelc MACRO text:REQ, x:REQ, y:REQ, delay:=<30>
-   mPrintMessage x,y,delay,text
-   mHideCursor
-   call ReadChar
-   .IF AX == 2960h
-      jmp skip_intro
-   .ENDIF
-ENDM
    ; welcome messages start of game
    mShowWelc WELC_STR_1, GRID_ORIGIN_X, GRID_ORIGIN_Y
    mShowWelc WELC_STR_2, GRID_ORIGIN_X, %(GRID_ORIGIN_Y+3)
@@ -481,118 +308,12 @@ ENDM
 ; GAME START
 
    call Clrscr
-
-
-mLoadBoard MACRO
-LOCAL loop_start, delay
-.data
-   delay DWORD ?
-.code
-   ; CREATE BOARD OF WHITE "#"s
-   mov eax, white
-   call SetTextColor
-
-   mov eax, 0
-   getProfileField al, printDelay
-   mov delay, eax
-
-
-   mov edi, 0
-
-  loop_start:
-   mov ax, di
-   getProfileField bl, gridCols
-   div bl
-   mov dh, al
-   mov dl, ah
-
-   mov al, dl
-   mul COL_PADDING
-   add al, GRID_ORIGIN_X
-   mov dl, al
-
-   mov al, dh
-   mul ROW_PADDING
-   add al, GRID_ORIGIN_Y
-   mov dh, al
-
-   call gotoXY
-   mov eax, "#"
-   call WriteChar
-
-   pushad
-   INVOKE Sleep, delay	; delay between chars appearing
-   popad
-
-   inc edi
-   mov eax, 0
-   getProfileField ax, numCards
-   cmp edi, eax
-   jl loop_start
-   
-ENDM
    mLoadBoard
-
-
-
-; === MoveRight =====================================================================
-MoveRight MACRO
-
- mov dl, game.cursorX
- inc dl
-
- getProfileField al, gridCols
- .IF dl >= 0 && dl < al
-    mov game.cursorX, dl
- .ENDIF
-
-ENDM
-
-; === MoveLeft ======================================================================
-MoveLeft MACRO
-
- mov dl, game.cursorX
- dec dl
-
- getProfileField al, gridCols
- .IF dl >= 0 && dl < al
-    mov game.cursorX, dl
- .ENDIF
-
-ENDM
-
-
-; === MoveUp ========================================================================
-MoveUp MACRO
-
- mov dh, game.cursorY
- dec dh
-
- getProfileField al, gridRows
- .IF dh >= 0 && dh < al
-    mov game.cursorY, dh
- .ENDIF
-
-ENDM
-
-
-; === MoveDown ======================================================================
-MoveDown MACRO
-
- mov dh, game.cursorY
- inc dh
-
- getProfileField al, gridRows
- .IF dh >= 0 && dh < al
-    mov game.cursorY, dh
- .ENDIF
-
-ENDM
 
 
  game_loop:
 ; GAME LOOP
-   mov ebx, TYPE WORD
+   ;mov ebx, TYPE WORD
 
    .WHILE 1 ;game.numFound < (GameProfile PTR game.profile).numSymbols
       getProfileField al, numSymbols
@@ -636,78 +357,7 @@ ENDM
 
    call DrawInfo
 
-mChoosePlayAgain MACRO x:REQ, y:REQ
-LOCAL selected, yesLabel, noLabel, col, row
-.data
-   selected BYTE 0
-   yesLabel BYTE "Yes",0
-   noLabel BYTE "No",0
-   col BYTE 0
-   row BYTE 0
-.code
-   mov col, x
-   mov row, y
-   
-   .WHILE 1
-      ; color of highlighted text
-      .IF selected == 0
-         mov eax, lightGreen
-      .ELSE
-         mov eax, white
-      .ENDIF
-      call SetTextColor
-      mov bl, col
-      mov bh, row
-      mGotoXY bl, bh
-      mWriteString yesLabel
 
-      .IF selected == 1
-         mov eax, lightGreen
-      .ELSE
-         mov eax, white
-      .ENDIF
-      call SetTextColor
-      add ebx, LENGTHOF yesLabel
-      add ebx, 2
-      mov bh, row
-      mGotoXY bl, bh
-      mWriteString noLabel
-      ; yes/no selected
-      call ReadChar
-      .IF AX == 4D00h && selected < 1; right
-         inc selected
-      .ELSEIF AX == 4B00h && selected > 0; left
-         dec selected
-      .ELSEIF AX == 3920h ; space
-         .IF selected == 0
-            call Clrscr
-            ; RESET GAME DATA
-            cld ; direction = forward
-            mov ecx, SIZEOF GameData
-            mov esi, OFFSET GAME_RESET ; source
-            mov edi, OFFSET game ;target
-            rep movsb
-            mov eax, skip_intro
-         .ELSEIF selected == 1
-            mov eax, terminate
-         .ELSE
-            nop
-         .ENDIF
-         .BREAK
-      .ELSE
-         nop
-      .ENDIF
-
-   .ENDW
-   ; reset text color
-   push eax
-   mov eax, white
-   call SetTextColor
-   pop eax
-   jmp eax
-
-
-ENDM
    ; play again
    mov dl, GRID_ORIGIN_X
    mov dh, GRID_ORIGIN_Y

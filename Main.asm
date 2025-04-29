@@ -161,7 +161,7 @@ DrawBoard PROC USES ecx ebx edi eax esi
    call Gotoxy
    call WriteChar
 
-   ; Loop Stuff
+   ; Loop
    inc esi
    inc edi
    dec ecx
@@ -340,7 +340,7 @@ ENDM
 
 
 
-
+; === mChooseDifficulty ==============================================================
 mChooseDifficulty MACRO x:REQ, y:REQ
 LOCAL selected
 .data
@@ -350,7 +350,7 @@ LOCAL selected
    hardLabel BYTE "Hard",0
 .code
    .WHILE 1
-
+      ; color of highlighted text
       .IF selected == 0
          mov eax, lightGreen
       .ELSE
@@ -416,13 +416,13 @@ main PROC
 ; === mShowWelc =====================================================================
 mShowWelc MACRO text:REQ, x:REQ, y:REQ, delay:=<30>
    mPrintMessage x,y,delay,text
-   ;mHideCursor
+   mHideCursor
    call ReadChar
    .IF AX == 2960h
       jmp skip_intro
    .ENDIF
 ENDM
-
+   ; welcome messages start of game
    mShowWelc WELC_STR_1, GRID_ORIGIN_X, GRID_ORIGIN_Y
    mShowWelc WELC_STR_2, GRID_ORIGIN_X, %(GRID_ORIGIN_Y+3)
    mShowWelc WELC_STR_3, GRID_ORIGIN_X, %(GRID_ORIGIN_Y+5)
@@ -488,6 +488,7 @@ LOCAL loop_start, delay
 .data
    delay DWORD ?
 .code
+   ; CREATE BOARD OF WHITE "#"s
    mov eax, white
    call SetTextColor
 
@@ -520,7 +521,7 @@ LOCAL loop_start, delay
    call WriteChar
 
    pushad
-   INVOKE Sleep, delay	;; honk shoe
+   INVOKE Sleep, delay	; delay between chars appearing
    popad
 
    inc edi
@@ -602,7 +603,6 @@ ENDM
 
       call DrawBoard
       call DrawInfo
-      ;   jmp game_done
       mHideCursor
       call ReadChar
       push eax
@@ -649,7 +649,7 @@ LOCAL selected, yesLabel, noLabel, col, row
    mov row, y
    
    .WHILE 1
-
+      ; color of highlighted text
       .IF selected == 0
          mov eax, lightGreen
       .ELSE
@@ -672,7 +672,7 @@ LOCAL selected, yesLabel, noLabel, col, row
       mov bh, row
       mGotoXY bl, bh
       mWriteString noLabel
-
+      ; yes/no selected
       call ReadChar
       .IF AX == 4D00h && selected < 1; right
          inc selected
@@ -699,7 +699,7 @@ LOCAL selected, yesLabel, noLabel, col, row
       .ENDIF
 
    .ENDW
-
+   ; reset text color
    push eax
    mov eax, white
    call SetTextColor
@@ -708,7 +708,7 @@ LOCAL selected, yesLabel, noLabel, col, row
 
 
 ENDM
-
+   ; play again
    mov dl, GRID_ORIGIN_X
    mov dh, GRID_ORIGIN_Y
    getProfileField al, gridRows

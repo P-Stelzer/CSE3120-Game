@@ -29,17 +29,17 @@ LOCAL string, printloop, printexit
 
 
 	printloop:
-	mov  al, [edx]		;; get next char
-	cmp al, 0			;; check if at end
-	jz printexit
-	call	WriteChar
+	mov  al, [edx]		; get next char
+	cmp al, 0			; check if at end
+	jz printexit		; exit if at end
+	call	WriteChar	; white the char into console
 
-	push edx			;; save progress to stack
-	INVOKE Sleep, delay	;; honk shoe
-	pop edx			;; restore position
+	push edx			; save progress to stack
+	INVOKE Sleep, delay	; text delay
+	pop edx				; restore position
 
-	inc edx
-	jmp printloop
+	inc edx				; next char
+	jmp printloop		; repeat
 
 	printexit:
 	pop eax
@@ -52,14 +52,12 @@ mHideCursor MACRO
 
    push edx
    push eax
-   call GetMaxXY
+   call GetMaxXY		; screen dimensions
    mov dh, al
    dec dh
    dec dl
    call GotoXY
    pop eax
    pop edx
-
+						; move to bottom off screen
 ENDM
-
-

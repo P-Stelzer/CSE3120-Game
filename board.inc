@@ -10,15 +10,15 @@ CARD_BACK_CHAR EQU 35
 ; === Shuffle ==========================================================================
 mShuffle MACRO string:REQ, length:REQ, numShuffles:REQ
 LOCAL loop_start
-   push ecx
+   push ecx					
 
-   mov ecx, 0
+   mov ecx, 0					; initialize counter
  loop_start:
-   mShuffleOnce string, length
+   mShuffleOnce string, length	; shuffle once
 
-   inc ecx
-   cmp ecx, numShuffles
-   jb loop_start
+   inc ecx						
+   cmp ecx, numShuffles			; check if done
+   jb loop_start				; loop if # of shuffles not reached
 
    pop ecx
 
@@ -33,11 +33,14 @@ LOCAL loop_start
 
    mov ebx, 0
  loop_start:
+   ; get random index
    mov eax, length
    call RandomRange
 
+   ; swap current element with random index
    mSwap string, eax, ebx
 
+   ; loop for elements
    inc ebx
    cmp ebx, length
    jb loop_start
@@ -50,15 +53,15 @@ ENDM
 
 mSwap MACRO string:REQ, loc1:REQ, loc2:REQ
    push edx
-   ;; save first char in temp
+   ; save first char in temp
    mov dl, string[loc1]
    push edx
 
-   ;; place second char in first char
+   ; place second char in first char
    mov dl, string[loc2]
    mov string[loc1], dl
 
-   ;; replace first char in second char
+   ; replace first char in second char
    pop edx
    mov string[loc2], dl
    pop edx
